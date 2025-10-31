@@ -2629,6 +2629,21 @@ static void windows_map(void)
 }
 
 
+static void term_view_map_hook(term* t) {
+	(void)t;
+
+    if (!use_graphics) {
+		/* Fall back to default view of map */
+		Term->view_map_hook = NULL;
+		do_cmd_view_map();
+		Term->view_map_hook = term_view_map_hook;
+		return;
+	}
+
+	windows_map();
+}
+
+
 /**
  * ------------------------------------------------------------------------
  *  Other routines
@@ -2669,6 +2684,7 @@ static void term_data_link(term_data *td)
 	t->text_hook = Term_text_win;
 	t->pict_hook = Term_pict_win;
 	t->dblh_hook = NULL;
+	t->view_map_hook = term_view_map_hook;
 
 	/* Remember where we came from */
 	t->data = td;
