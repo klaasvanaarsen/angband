@@ -4,8 +4,7 @@ on:
   push:
     branches: [ master ]
   pull_request:
-  workflow_dispatch:
-  
+
 jobs:
   build:
     name: Stock 
@@ -25,8 +24,3 @@ jobs:
           ./configure --enable-win --build=i686-pc-linux-gnu --host=i686-w64-mingw32
           make
 
-      - name: Upload Windows build
-        uses: actions/upload-artifact@v4
-        with:
-          name: angband-windows
-          path: src/angband.exe 
