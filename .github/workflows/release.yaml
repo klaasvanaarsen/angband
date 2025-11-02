@@ -252,7 +252,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc-mingw-w64 automake autoconf git make zip
+          sudo apt-get install gcc-mingw-w64 automake autoconf git make zip cmake ninja-build
 
       # Need commit history and tags for scripts/version.sh to work as expected
       # so use 0 for fetch-depth.
@@ -303,6 +303,13 @@ jobs:
           name: ${{ env.WIN_ARCHIVE_ARTIFACT }}
           path: ${{ steps.create_windows_archive.outputs.archive_file }}
           retention-days: 1
+
+      - name: Build release version with CMake/Ninja
+        run: |
+          mkdir build-mingw-release
+          cd build-mingw-release
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=src/cmake/macros/mingw-w64-toolchain.cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake --build .
 
   mac:
     needs: [setup, docconvert]

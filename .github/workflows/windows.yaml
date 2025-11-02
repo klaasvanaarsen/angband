@@ -13,7 +13,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc-mingw-w64 automake autoconf make
+          sudo apt-get install gcc-mingw-w64 automake autoconf make cmake ninja-build
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -24,3 +24,9 @@ jobs:
           ./configure --enable-win --build=i686-pc-linux-gnu --host=i686-w64-mingw32
           make
 
+      - name: Build debug version with CMake/Ninja
+        run: |
+          mkdir build-mingw-debug
+          cd build-mingw-debug
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=src/cmake/macros/mingw-w64-toolchain.cmake -DCMAKE_BUILD_TYPE=Debug ..
+          cmake --build .
