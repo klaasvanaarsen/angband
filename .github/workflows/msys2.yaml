@@ -15,17 +15,14 @@ jobs:
       run:
         shell: msys2 {0}
     steps:
-      - name: Set up prerequisites (32-bit)
+      - name: Set up prerequisites
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          msystem: MINGW32
           install: >-
             make
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-ncurses
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -34,13 +31,6 @@ jobs:
         run: |
           cd src
           make -f Makefile.msys2
-
-      - name: Build with CMake/Ninja
-        run: |
-          mkdir build-msys2
-          cd build-msys2
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
-          cmake --build . -j$(nproc)
           
   sdl:
     name: SDL2
@@ -89,6 +79,8 @@ jobs:
           install: >-
             make
             mingw-w64-i686-gcc
+            mingw-w64-i686-cmake
+            mingw-w64-i686-ninja
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -97,6 +89,13 @@ jobs:
         run: |
           cd src
           make -f Makefile.win MINGW=yes
+
+      - name: Build with CMake/Ninja
+        run: |
+          mkdir build-msys2-win
+          cd build-msys2-win
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
+          cmake --build . -j$(nproc)
 
   configure-win:
     runs-on: windows-latest
