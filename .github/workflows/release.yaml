@@ -305,13 +305,6 @@ jobs:
           retention-days: 1
 
       - name: Build release version with CMake/Ninja
-        run: |
-          mkdir build-mingw-release
-          cd build-mingw-release
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=src/cmake/macros/mingw-w64-toolchain.cmake -DCMAKE_BUILD_TYPE=Release ..
-          cmake --build .
-
-      - name: Build release version with CMake/Ninja
         id: cmake_build
         run: |
           mkdir build-mingw-release
