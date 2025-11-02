@@ -309,7 +309,7 @@ jobs:
         run: |
           mkdir build-mingw-release
           cd build-mingw-release
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=src/cmake/macros/mingw-w64-toolchain.cmake -DCMAKE_BUILD_TYPE=Release ..
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=../toolchains/linux-i686-mingw32-cross.cmake -DCMAKE_BUILD_TYPE=Release ..
           cmake --build .
           # Get file size for comparison
           file_size=$(stat -c%s "Angband.exe")

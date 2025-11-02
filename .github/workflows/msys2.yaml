@@ -23,6 +23,8 @@ jobs:
             make
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-ncurses
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -32,6 +34,13 @@ jobs:
           cd src
           make -f Makefile.msys2
 
+      - name: Build with CMake/Ninja
+        run: |
+          mkdir build-msys2
+          cd build-msys2
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
+          cmake --build . -j$(nproc)
+          
   sdl:
     name: SDL2
     runs-on: windows-latest

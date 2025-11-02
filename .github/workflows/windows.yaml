@@ -34,7 +34,7 @@ jobs:
           start_time=$(date +%s)
           mkdir build-mingw-debug
           cd build-mingw-debug
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=src/cmake/macros/mingw-w64-toolchain.cmake -DCMAKE_BUILD_TYPE=Debug ..
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_TOOLCHAIN_FILE=toolchains/linux-i686-mingw32-cross.cmake -DCMAKE_BUILD_TYPE=Debug ..
           cmake --build . -j$(nproc)
           end_time=$(date +%s)
           echo "cmake_time=$((end_time - start_time))" >> $GITHUB_OUTPUT
