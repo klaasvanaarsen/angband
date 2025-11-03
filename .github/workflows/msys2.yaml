@@ -92,8 +92,8 @@ jobs:
 
       - name: Build with CMake/Ninja
         run: |
-          mkdir build-msys2-win
-          cd build-msys2-win
+          mkdir build-msys2-win32
+          cd build-msys2-win32
           cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
           cmake --build . -j$(nproc)
 
