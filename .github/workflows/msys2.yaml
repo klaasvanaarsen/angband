@@ -32,6 +32,13 @@ jobs:
           cd src
           make -f Makefile.msys2
 
+      - name: Build with cmake/ninja
+        run: |
+          mkdir build-msys2-win64
+          cd build-msys2-win64
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
+          cmake --build . -j$(nproc)
+
   sdl:
     name: SDL2
     runs-on: windows-latest
