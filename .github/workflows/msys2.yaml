@@ -119,7 +119,6 @@ jobs:
           make tests
 
   cmake-win:
-    name: CMake Windows (32-bit)
     runs-on: windows-latest
     defaults:
       run:
@@ -154,9 +153,3 @@ jobs:
         run: |
           cd build-msys2-win32
           cmake --build . --target alltests
-
-      - name: List built artifacts
-        run: |
-          cd build-msys2-win32
-          find . -name "*.exe" -type f
-          ls -la *.exe *.dll 2>/dev/null || echo "No executables in build directory"
