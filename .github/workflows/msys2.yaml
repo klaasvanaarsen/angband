@@ -31,7 +31,7 @@ jobs:
         run: |
           cd src
           make -f Makefile.msys2
-          
+
   sdl:
     name: SDL2
     runs-on: windows-latest
@@ -79,8 +79,6 @@ jobs:
           install: >-
             make
             mingw-w64-i686-gcc
-            mingw-w64-i686-cmake
-            mingw-w64-i686-ninja
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -89,13 +87,6 @@ jobs:
         run: |
           cd src
           make -f Makefile.win MINGW=yes
-
-      - name: Build with CMake/Ninja
-        run: |
-          mkdir build-msys2-win32
-          cd build-msys2-win32
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
-          cmake --build . -j$(nproc)
 
   configure-win:
     runs-on: windows-latest
