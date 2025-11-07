@@ -1,0 +1,4 @@
+find_package(SDL2 REQUIRED)
+add_executable(myapp_sdl2 sdl2_frontend.c)
+target_link_libraries(myapp_sdl2 PRIVATE core SDL2::SDL2)
+set_target_properties(myapp_sdl2 PROPERTIES OUTPUT_NAME "myapp")
