@@ -25,7 +25,6 @@ add_executable(${_TARGET_NAME}
 # Include directories
 # ---------------------------------------------------------------------------
 target_include_directories(${_TARGET_NAME} PRIVATE
-    ${}
     ../../win
 )
 
@@ -63,7 +62,8 @@ endif()
 # Link libraries and apply options
 # ----------------------------------------------------------
 target_link_libraries(${_TARGET_NAME} PRIVATE
-    core        # Link with the shared core library
+    OurCoreLib
+    OurSoundSupportLib  # Empty if not configured
     msimg32
     winmm
     core

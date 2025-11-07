@@ -1,4 +1,4 @@
-add_library(core STATIC
+add_library(OurCoreLib STATIC
     buildid.c
     cave-map.c
     cave-square.c
@@ -213,9 +213,32 @@ target_include_directories(core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-if(WITH_FEATURE_X)
-    target_compile_definitions(core PUBLIC FEATURE_X_ENABLED)
-endif()
+# --- Features ---
+IF(SUPPORT_BORG)
+    TARGET_INCLUDE_DIRECTORIES(OurCoreLib PRIVATE
+        ${ANGBAND_CORE_INCLUDE_DIRS}
+    )
+    TARGET_COMPILE_DEFINITIONS(OurCoreLib PRIVATE -D ALLOW_BORG)
+    IF(SUPPORT_BORG_HIGH_SCORES)
+        TARGET_COMPILE_DEFINITIONS(OurCoreLib PRIVATE -D SCORE_BORGS)
+    ENDIF()
+ENDIF()
+
+IF(SUPPORT_COVERAGE)
+    CONFIGURE_TARGET_FOR_COVERAGE(OurCoreLib)
+ENDIF()
+
+IF(SUPPORT_SDL_SOUND OR SUPPORT_SDL2_SOUND)
+    ADD_LIBRARY(OurSoundSupportLib OBJECT
+            snd-sdl.c
+    )
+    SET(SOUND_SUPPORT_LIB OurSoundSupportLib)
+    IF(SUPPORT_COVERAGE)
+        CONFIGURE_TARGET_FOR_COVERAGE(OurSoundSupportLib)
+    ENDIF()
+ELSE()
+    SET(SOUND_SUPPORT_LIB "")
+ENDIF()
 
 # --- Frontend selection ---
 if(FRONTEND_SDL)
