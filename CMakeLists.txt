@@ -797,9 +797,8 @@ IF(SC_INSTALL)
         # Repo root is CMAKE_SOURCE_DIR
         SET(REPO_ROOT_DIR ${CMAKE_SOURCE_DIR})
         
-        # Copy final executable and DLLs to repo root to avoid antivirus interference
-        # Note that building the executable in the same directory as the dlls
-        # seems to cause issues with some antivirus software (e.g. Windows Defender).
+        # Copy final executable and DLLs to repo root.
+        # Note that building the executable in the same directory as the DLLs fails in MSYS2 MINGW32.
         ADD_CUSTOM_COMMAND(TARGET OurExecutable POST_BUILD
             # Copy executable (rename to lowercase)
             COMMAND ${CMAKE_COMMAND} -E copy_if_different

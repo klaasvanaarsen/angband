@@ -1,4 +1,4 @@
-# Mingw-w64 cross-compilation toolchain
+# Mingw32 cross-compilation toolchain
 set(CMAKE_SYSTEM_NAME Windows)
 set(CMAKE_SYSTEM_PROCESSOR x86_64)
 
