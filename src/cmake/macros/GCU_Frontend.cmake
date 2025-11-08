@@ -7,15 +7,16 @@ MACRO(CONFIGURE_GCU_FRONTEND _NAME_TARGET)
     SET(CURSES_NEED_NCURSES TRUE)
 
     # Only call find_package if we don't already have it from a toolchain
-    IF (NOT CURSES_FOUND)
-        # Check if toolchain variables exist and are valid
-        message(STATUS "CURSES_INCLUDE_DIRS=${CURSES_INCLUDE_DIRS}")
+    IF (CURSES_INCLUDE_DIRS)
+        # Check if toolchain variables  are valid
         IF (EXISTS "${CURSES_INCLUDE_DIRS}")
             MESSAGE(STATUS "Using ncurses from toolchain: ${CURSES_INCLUDE_DIRS}, ${CURSES_LIBRARIES}")
             SET(CURSES_FOUND TRUE)
         ELSE()
-            FIND_PACKAGE(Curses)
+            MESSAGE(WARNING "CURSES_INCLUDE_DIRS from toolchain is invalid: ${CURSES_INCLUDE_DIRS}")
         ENDIF()
+    ELSE()
+        FIND_PACKAGE(Curses)
     ENDIF()
 
 
