@@ -18,13 +18,13 @@ jobs:
       - name: Clone Project
         uses: actions/checkout@v4
 
-      - name: Build
+      - name: Build with Ninja
         run: |
           mkdir build
           cd build
-          env CFLAGS=-Wall cmake -DSUPPORT_TEST_FRONTEND=ON ..
-          cmake --build .
-          cmake --build . --target alltests
+          env CFLAGS=-Wall cmake -G Ninja -DSUPPORT_TEST_FRONTEND=ON ..
+          ninja -j$(nproc)
+          ninja --target alltests -j$(nproc)
 
   x11:
     name: X11
@@ -38,12 +38,12 @@ jobs:
       - name: Clone Project
         uses: actions/checkout@v4
 
-      - name: Build
+      - name: Build with Ninja
         run: |
           mkdir build
           cd build
-          env CFLAGS=-Wall cmake ..
-          make
+          env CFLAGS=-Wall cmake -G Ninja ..
+          ninja -j$(nproc)
 
   ncurses:
     name: NCurses
@@ -57,12 +57,12 @@ jobs:
       - name: Clone Project
         uses: actions/checkout@v4
 
-      - name: Build
+      - name: Build with Ninja
         run: |
           mkdir build
           cd build
-          env CFLAGS=-Wall cmake -DSUPPORT_GCU_FRONTEND=ON ..
-          make
+          env CFLAGS=-Wall cmake -G Ninja -DSUPPORT_GCU_FRONTEND=ON ..
+          ninja -j$(nproc)
 
   sdl:
     name: SDL
@@ -76,12 +76,12 @@ jobs:
       - name: Clone Project
         uses: actions/checkout@v4
 
-      - name: Build
+      - name: Build with Ninja
         run: |
           mkdir build
           cd build
-          env CFLAGS=-Wall cmake -DSUPPORT_SDL_FRONTEND=ON -DSUPPORT_SDL_SOUND=ON ..
-          make
+          env CFLAGS=-Wall cmake -G Ninja -DSUPPORT_SDL_FRONTEND=ON -DSUPPORT_SDL_SOUND=ON ..
+          ninja -j$(nproc)
 
   sdl2:
     name: SDL2
@@ -100,6 +100,13 @@ jobs:
           ./autogen.sh
           ./configure --with-no-install --enable-sdl2 --enable-sdl2-mixer
           make
+
+      - name: Build with CMake/Ninja
+        run: |
+          mkdir build
+          cd build
+          env CFLAGS=-Wall cmake -G Ninja -DSUPPORT_SDL2_FRONTEND=ON -DSUPPORT_SDL2_SOUND=ON ..
+          ninja -j$(nproc)
 
   statbuild:
     name: Statistics Build
