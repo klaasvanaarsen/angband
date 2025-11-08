@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DSUPPORT_NCURSES_FRONTEND ..
+          cmake -G Ninja -DSUPPORT_NCURSES_FRONTEND=ON ..
           ninja -j$(nproc)
 
   sdl:
@@ -170,4 +170,4 @@ jobs:
       - name: Run Tests
         run: |
           cd build
-          ninja --target alltests -j$(nproc)
+          ninja -j$(nproc) alltests

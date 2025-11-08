@@ -23,8 +23,7 @@ jobs:
           mkdir build
           cd build
           env CFLAGS=-Wall cmake -G Ninja -DSUPPORT_TEST_FRONTEND=ON ..
-          ninja -j$(nproc)
-          ninja --target alltests -j$(nproc)
+          ninja -j$(nproc) alltests
 
   x11:
     name: X11
