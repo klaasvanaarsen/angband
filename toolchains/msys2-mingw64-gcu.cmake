@@ -19,6 +19,6 @@ set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 
 # Pre-set ncurses since find_package(Curses) does not work correctly under MSYS2
-set(CURSES_INCLUDE_DIRS "C:/msys64/mingw64/include/ncurses")
-set(CURSES_LIBRARIES "C:/msys64/mingw64/lib/libncursesw.a;C:/msys64/mingw64/lib/libformw.a")
+set(CURSES_INCLUDE_DIRS "/mingw64/include/ncurses")
+set(CURSES_LIBRARIES "/mingw64/lib/libncursesw.a;/mingw64/lib/libformw.a")
 set(CURSES_LIBRARY ncursesw)

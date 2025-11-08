@@ -36,8 +36,6 @@ jobs:
 
       - name: Build with CMake/Ninja
         run: |
-          ls -d /mingw64/include/nc*
-          ls /mingw64/lib/libnc*
           mkdir build
           cd build
           cmake -G Ninja \
