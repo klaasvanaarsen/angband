@@ -13,7 +13,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc make cmake libx11-dev
+          sudo apt-get install gcc make cmake libx11-dev ninja-build
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc make cmake libx11-dev
+          sudo apt-get install gcc make cmake libx11-dev ninja-build
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -51,7 +51,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc make cmake libncursesw5-dev
+          sudo apt-get install gcc make cmake libncursesw5-dev ninja-build
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -70,7 +70,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc make cmake libsdl-image1.2-dev libsdl-ttf2.0-dev libsdl-mixer1.2-dev
+          sudo apt-get install gcc make cmake libsdl-image1.2-dev libsdl-ttf2.0-dev libsdl-mixer1.2-dev ninja-build
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -89,7 +89,7 @@ jobs:
       - name: Install Build Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install gcc autoconf automake make libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev
+          sudo apt-get install gcc autoconf automake make libsdl2-dev libsdl2-image-dev libsdl2-ttf-dev libsdl2-mixer-dev ninja-build
 
       - name: Clone Project
         uses: actions/checkout@v4
