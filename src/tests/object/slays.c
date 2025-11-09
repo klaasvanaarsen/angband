@@ -1156,10 +1156,8 @@ static int test_react_to_slay(void *state)
 		if (!slays[i1].base || !slays[i1].race_flag) continue;
 
 		rf_on(dummy_race.flags, slays[i1].race_flag);
-		if (slays[i1].base) {
-			old_base = dummy_race.base->name;
-			dummy_race.base->name = slays[i1].base;
-		}
+		old_base = dummy_race.base->name;
+		dummy_race.base->name = slays[i1].base;
 		/* Monster is vulnerable, but weapon doesn't have the slay. */
 		eq(react_to_slay(&weapon, &dummy), false);
 		old_slays = weapon.slays;
@@ -1170,9 +1168,7 @@ static int test_react_to_slay(void *state)
 		weapon.slays[i1] = false;
 		weapon.slays = old_slays;
 		rf_off(dummy_race.flags, slays[i1].race_flag);
-		if (slays[i1].base) {
-			dummy_race.base->name = old_base;
-		}
+		dummy_race.base->name = old_base;
 	}
 
 	ok;
