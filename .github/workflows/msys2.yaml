@@ -38,7 +38,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja \
+          env CFLAGS="-Wall -Wextra -pedantic -Werror" cmake -G Ninja \
             -DSUPPORT_GCU_FRONTEND=ON \
             -DCMAKE_TOOLCHAIN_FILE=../toolchains/msys2-mingw64-gcu.cmake \
             ..
@@ -79,7 +79,7 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DSUPPORT_SDL2_FRONTEND=ON ..
+          env CFLAGS="-Wall -Wextra -pedantic -Werror" cmake -G Ninja -DSUPPORT_SDL2_FRONTEND=ON ..
           ninja -j$(nproc)
 
   makefile-win:
@@ -163,12 +163,12 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_BUILD_TYPE=Release ..
+          env CFLAGS="-Wall -Wextra -pedantic -Werror" cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DCMAKE_BUILD_TYPE=Release ..
 
       - name: Build with Ninja
         run: |
           cd build
-          ninja -j$(nproc)
+          ninja -j$(nproc) --verbose
 
       - name: Run Tests
         run: |

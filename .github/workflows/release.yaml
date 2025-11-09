@@ -309,11 +309,10 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja \
+          env CFLAGS="-O2 -DNDEBUG -Wall -Wextra -pedantic -Werror" cmake -G Ninja \
             -DSUPPORT_WINDOWS_FRONTEND=ON \
             -DCMAKE_TOOLCHAIN_FILE=../toolchains/linux-i686-mingw32-cross.cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_C_FLAGS_RELEASE="-O2 -DNDEBUG" \
             ..
           ninja -j$(nproc)
           # Get file size for comparison
