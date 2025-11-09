@@ -16,7 +16,7 @@ jobs:
       - name: Build
         run: |
           cd src
-          make -f Makefile.osx
+          env CFLAGS="-Wall  -Wextra -pedantic -Werror" make -f Makefile.osx vars all
 
   autoconf:
     runs-on: macos-latest
