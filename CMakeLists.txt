@@ -25,6 +25,9 @@ OPTION(SUPPORT_STATS_BACKEND "Enable backend support for statistics and related 
 OPTION(SUPPORT_BORG "Support for Borg." ON)
 OPTION(SUPPORT_BORG_HIGH_SCORES "Borg characters allowed in high scores." OFF)
 
+# Global compiler settings (ignored if using MSVC).
+add_compile_options(-Wall -Wextra -pedantic -Wno-unused-parameter)
+
 # By default, generate a self-contained build left where the build was run.
 # If not using the Windows front end, the executable will have hardwired
 # relative paths to the game's data, and when run, the working directory should
