@@ -3088,14 +3088,6 @@ static void setup_menus(void)
 	EnableMenuItem(hm, IDM_OPTIONS_LOW_PRIORITY,
 	               MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
 
-	/* Menu "Options", Item "Map" */
-	if (inkey_flag && initialized && (use_graphics != GRAPHICS_NONE))
-		EnableMenuItem(GetMenu(data[0].w), IDM_OPTIONS_MAP,
-					   MF_BYCOMMAND | MF_ENABLED);
-	else
-		EnableMenuItem(GetMenu(data[0].w), IDM_OPTIONS_MAP,
-		               MF_BYCOMMAND | MF_DISABLED | MF_GRAYED);
-
 	/* Menu "Options", update all */
 	mode = graphics_modes;
 	while (mode) {
@@ -4101,18 +4093,6 @@ static void process_menus(WORD wCmd)
 			/* Toggle priority */
 			low_priority = !low_priority;
 
-			break;
-		}
-
-		case IDM_OPTIONS_MAP:
-		{
-			/* Paranoia */
-			if (!inkey_flag || !initialized) {
-				plog("You may not do that right now.");
-				break;
-			}
-
-			windows_map();
 			break;
 		}
 
