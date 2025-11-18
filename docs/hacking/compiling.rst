@@ -376,7 +376,30 @@ When debugging crashes it can be very useful to get more information about *what
 
 Note that compiling with these tools will require installing additional dependencies: libubsan libasan (names of the packages might be different in your distribution).
 
-There is probably a way to get these tools to work on Windows. If you know how, please add the information to this file.
+To use ASan and UBSan and/or debug on Windows, you need MSYS2 CLANG64 since other shells and compilers do not properly support ASan/UBSan at the time of this writing.
+
+Run:
+
+    C:/msys64/clang64.exe
+
+Then do:
+
+    pacman -Sy
+    pacman -Su
+    pacman -S \
+        mingw-w64-x86_64-clang \
+        mingw-w64-x86_64-compiler-rt \
+        mingw-w64-x86_64-cmake \
+        mingw-w64-x86_64-ninja \
+        mingw-w64-x86_64-libpng \
+        mingw-w64-x86_64-gdb
+
+    mkdir build && cd build
+    cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON \
+        -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g" \
+        -DCMAKE_EXE_LINKER_FLAGS="-fsanitize=address -fsanitize=undefined" \
+        ..
+    ninja
 
 Test cases
 ~~~~~~~~~~
