@@ -163,10 +163,13 @@ if(MSVC)
 else()
     add_compile_options(-Wall -Wextra -pedantic -Wno-unused-parameter)
 
-    option(ENABLE_ASAN "Enable AddressSanitizer + UBSan" OFF)
+    option(ENABLE_ASAN "Enable AddressSanitizer + UBSan (needs CLANG64 on MSYS2)" OFF)
     if(ENABLE_ASAN)
         message(STATUS "ASan/UBSan enabled")
-        set(SAN_FLAGS "-fsanitize=address,undefined -fno-omit-frame-pointer")
+        set(SAN_FLAGS
+            -fsanitize=address,undefined
+            -fno-omit-frame-pointer
+        )
         add_compile_options(${SAN_FLAGS})
         add_link_options(${SAN_FLAGS})
         # Recommended for UBSan: keep symbols
