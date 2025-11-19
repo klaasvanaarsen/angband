@@ -41,6 +41,7 @@ jobs:
           cmake -G Ninja \
             -DSUPPORT_GCU_FRONTEND=ON \
             -DCMAKE_TOOLCHAIN_FILE=../toolchains/msys2-mingw64-gcu.cmake \
+            -DCMAKE_C_FLAGS="-Werror" \
             ..
           ninja -j$(nproc)
 
@@ -79,7 +80,10 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DSUPPORT_SDL2_FRONTEND=ON ..
+          cmake -G Ninja \
+            -DSUPPORT_SDL2_FRONTEND=ON \
+            -DCMAKE_C_FLAGS="-Werror" \
+            ..
           ninja -j$(nproc)
 
   makefile-win:
@@ -164,7 +168,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON \
+            -DCMAKE_C_FLAGS="-Werror" \
+            ..
 
       - name: Build with Ninja
         run: |
@@ -180,7 +186,9 @@ jobs:
         run: |
           mkdir -p build
           cd build
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DSUPPORT_BUNDLED_PNG=ON ..
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DSUPPORT_BUNDLED_PNG=ON \
+            -DCMAKE_C_FLAGS="-Werror" \
+            ..
           ninja -j$(nproc)
 
   cmake-win64:
@@ -207,7 +215,9 @@ jobs:
         run: |
           mkdir build
           cd build
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON ..
+          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON \
+            -DCMAKE_C_FLAGS="-Werror" \
+            ..
 
       - name: Build with Ninja
         run: |
@@ -247,7 +257,7 @@ jobs:
           cmake -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-            -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
+            -DCMAKE_C_FLAGS="-Werror -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
             ..
           ninja -j$(nproc) --verbose
 
