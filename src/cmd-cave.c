@@ -1505,6 +1505,7 @@ void do_cmd_explore(struct command *cmd)
 	/* cancel if confused */
 	if (player->timed[TMD_CONFUSED]) {
 		msg("You cannot explore while confused.");
+		disturb(player);
 		return;
 	}
 
@@ -1522,10 +1523,11 @@ void do_cmd_explore(struct command *cmd)
 	/* Screen for visible monsters */
 	if (player_has_monster_in_view(player)) {
 		msg("Something is here.");
+		disturb(player);
 		return;
 	}
 
-	assert(!player->upkeep->steps);
+	/* assert(!player->upkeep->steps); */
 	player->upkeep->step_count = path_nearest_unknown(player, player->grid,
 		&player->upkeep->path_dest, &player->upkeep->steps);
 	if (player->upkeep->step_count > 0) {
@@ -1537,6 +1539,7 @@ void do_cmd_explore(struct command *cmd)
 	}
 
 	msg("No apparent path for exploration.");
+	disturb(player);
 }
 
 
