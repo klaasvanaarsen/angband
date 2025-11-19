@@ -364,7 +364,44 @@ When debugging crashes it can be very useful to get more information about *what
 
 Note that compiling with these tools will require installing additional dependencies: libubsan libasan (names of the packages might be different in your distribution).
 
-There is probably a way to get these tools to work on Windows. If you know how, please add the information to this file.
+To use ASan and UBSan on Windows, you need MSYS2 CLANG64 since other shells and
+compilers do not properly support ASan/UBSan at the time of this writing.
+
+Run:
+
+    C:/msys64/clang64.exe
+
+Install dependencies and build with:
+
+    pacman -S \
+        mingw-w64-clang-x86_64-compiler-rt \
+        mingw-w64-clang-x86_64-cmake \
+        mingw-w64-clang-x86_64-ninja \
+        mingw-w64-clang-x86_64-libpng
+
+    mkdir build && cd build
+    cmake -G Ninja \
+        -DCMAKE_BUILD_TYPE=Debug \
+        -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+        -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
+        ..
+    ninja
+
+Note that UBSAN detection relies somewhat on Debug builds because some
+undefined behavior is otherwise optimized out before it can be detected
+and it relies on -g to get readable stack traces. ASAN can and probably should
+be done with a Release binary though.
+Note that LTO (CMAKE_INTERPROCEDURAL_OPTIMIZATION / -fno-lto) should be OFF in
+particular for Release builds where it is switched on by default.
+
+Run the game from a command prompt (cmd) because Windows won't printf to an
+MSYS2 terminal.
+We also still need the path from the MSYS2 shell so that it can find the
+required DLLs (libclang_rt.asan_dynamic-x86_64.dll and libc++.dll), although
+we can also copy those.
+
+    cd game
+    cmd /c angband
 
 Test cases
 ~~~~~~~~~~
@@ -392,19 +429,6 @@ directory::
     ./configure --with-no-install --enable-test
     make
     ./run-tests
-
-To compile and run the unit tests and run the run-tests script while using
-CMake, do the following::
-
-    mkdir build && cd build
-    cmake -DSUPPORT_TEST_FRONTEND=ON ..
-    make alltests
-
-If you only want the unit tests while using CMake, it's a little simpler::
-
-    mkdir build && cd build
-    cmake ..
-    make allunittests
 
 There is some support for measuring how well the test cases cover the code.
 If you use configure and have gcc, gcov, and perl, you can run this in src
@@ -520,7 +544,11 @@ Using MSYS2 (with MinGW64)
 
 Install the dependencies by::
 
-	pacman -S make mingw-w64-x86_64-gcc
+	pacman -S make mingw-w64-x86_64-gcc mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
+
+Additional dependency for the native Windows client is::
+
+    pacman -S mingw-w64-x86_64-libpng
 
 The additional dependency for ncurses is::
 
@@ -531,7 +559,33 @@ Additional dependencies for the SDL2 client are::
 	pacman -S mingw-w64-x86_64-SDL2 mingw-w64-x86_64-SDL2_image \
 		mingw-w64-x86_64-SDL2_ttf
 
-Then run the following to compile with ncurses::
+Then run the following to compile for native Windows::
+
+    cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON \
+        ..
+    ninja
+
+For ncurses, do::
+
+    mkdir build && cd build
+    cmake -G Ninja -DSUPPORT_GCU_FRONTEND=ON \
+        -DCMAKE_TOOLCHAIN_FILE=../toolchains/msys2-mingw64-gcu.cmake \
+        ..
+    ninja
+
+For SDL2, do::
+
+    cmake -G Ninja -DSUPPORT_SDL2_FRONTEND=ON \
+        -DSUPPORT_SDL2_SOUND=ON \
+        ..
+    ninja
+
+Once built, go to game/ subdirectory and start angband by::
+
+    cd game
+    ./angband
+
+Alternatively it is possible to build with dedicated Makefiles::
 
 	cd src
 	make -f Makefile.msys2
