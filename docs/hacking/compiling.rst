@@ -385,7 +385,6 @@ Run:
 Install dependencies and build with:
 
     pacman -S \
-        mingw-w64-clang-x86_64-clang \
         mingw-w64-clang-x86_64-compiler-rt \
         mingw-w64-clang-x86_64-cmake \
         mingw-w64-clang-x86_64-ninja \
@@ -394,9 +393,14 @@ Install dependencies and build with:
     mkdir build && cd build
     cmake -G Ninja \
         -DCMAKE_BUILD_TYPE=Debug \
-        -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g" \
+        -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+        -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
         ..
     ninja
+
+Note that UBSAN detection relies on somewhat on debug builds because some undefined behavior is otherwise optimized out before it can be detected
+and it relies on -g to get readable stack traces. ASAN can and probably should be done with a release binary though.
+Note that LTO (CMAKE_INTERPROCEDURAL_OPTIMIZATION) should be OFF in particular for release builds where it is switched on by default.
 
 Set ASAN_OPTIONS and UBSAN_OPTIONS to log to file since a Windows application in an MSYS2 terminal cannot print to the terminal. Then start the game:
 
@@ -404,6 +408,14 @@ Set ASAN_OPTIONS and UBSAN_OPTIONS to log to file since a Windows application in
     export ASAN_OPTIONS=log_path=asan.log:abort_on_error=1
     export UBSAN_OPTIONS=log_path=ubsan.log:print_stacktrace=1
     ./angband
+
+Alternatively we can modify `main-win.c` to attach a console and restore printf behavior. Then we can do:
+
+    cd game
+    cmd /c angband
+
+We need to switch to a command prompt (cmd) because Windows won't printf to an MSYS2 terminal.
+We also still need the path from the MSYS2 shell so that it can find the required DLLs (libclang_rt.asan_dynamic-x86_64.dll and libc++.dll), although we can also copy those.
 
 Test cases
 ~~~~~~~~~~

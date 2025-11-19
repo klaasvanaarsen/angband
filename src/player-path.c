@@ -1694,12 +1694,23 @@ static bool run_test(const struct player *p)
 	int i, max, inv;
 	int option, option2;
 
+	/* Compute array lengths from the actual arrays */
+	const int CYCLE_LEN = (int)(sizeof(cycle) / sizeof(cycle[0]));
+	const int CHOME_LEN = (int)(sizeof(chome) / sizeof(chome[0]));
+	const int DDGRID_LEN = (int)(sizeof(ddgrid) / sizeof(ddgrid[0]));
+
 	/* No options yet */
 	option = 0;
 	option2 = 0;
 
 	/* Where we came from */
 	prev_dir = run_old_dir;
+
+	/* Validate prev_dir */
+	if (prev_dir < 0 || prev_dir >= CHOME_LEN) {
+		msg("Auto-run aborted: invalid prev_dir=%d", prev_dir);
+		return true;
+	}
 
 	/* Range of newly adjacent grids - 5 for diagonals, 3 for cardinals */
 	max = (prev_dir & 0x01) + 1;
@@ -1708,8 +1719,20 @@ static bool run_test(const struct player *p)
 	for (i = -max; i <= max; i++) {
 		struct object *obj;
 
+		int idx = chome[prev_dir] + i;
+		if (idx < 0 || idx >= CYCLE_LEN) {
+			msg("Auto-run aborted: cycle index out of range (%d) (prev_dir=%d, i=%d)", idx, prev_dir, i);
+			return true;
+		}
+
 		/* New direction */
-		new_dir = cycle[chome[prev_dir] + i];
+		new_dir = cycle[idx];
+
+		/* Validate new_dir */
+		if (new_dir < 0 || new_dir >= DDGRID_LEN) {
+			msg("Auto-run aborted: invalid new_dir=%d from cycle[%d]", new_dir, idx);
+			return true;
+		}
 
 		/* New location */
 		grid = loc_sum(p->grid, ddgrid[new_dir]);
@@ -1724,7 +1747,7 @@ static bool run_test(const struct player *p)
 
 		/* Visible traps abort running (unless trapsafe) */
 		if (square_isvisibletrap(cave, grid) &&
-			!player_is_trapsafe(p)) {
+		    !player_is_trapsafe(p)) {
 			return true;
 		}
 
@@ -1758,16 +1781,24 @@ static bool run_test(const struct player *p)
 			} else if (option2) {
 				/* Three new directions. Stop running. */
 				return true;
-			} else if (option != cycle[chome[prev_dir] + i - 1]) {
-				/* Two non-adjacent new directions.  Stop running. */
-				return true;
-			} else if (new_dir & 0x01) {
-				/* Two new (adjacent) directions (case 1) */
-				option2 = new_dir;
 			} else {
-				/* Two new (adjacent) directions (case 2) */
-				option2 = option;
-				option = new_dir;
+				int prev_idx = chome[prev_dir] + i - 1;
+				if (prev_idx < 0 || prev_idx >= CYCLE_LEN) {
+					msg("Auto-run aborted: cycle adjacent index out of range (%d)", prev_idx);
+					return true;
+				}
+
+				if (option != cycle[prev_idx]) {
+					/* Two non-adjacent new directions. Stop running. */
+					return true;
+				} else if (new_dir & 0x01) {
+					/* Two new (adjacent) directions (case 1) */
+					option2 = new_dir;
+				} else {
+					/* Two new (adjacent) directions (case 2) */
+					option2 = option;
+					option = new_dir;
+				}
 			}
 		} else { /* Obstacle, while looking for open area */
 			if (run_open_area) {
@@ -1784,16 +1815,30 @@ static bool run_test(const struct player *p)
 
 
 	/* Look at every soon to be newly adjacent square. */
-	for (i = -max; i <= max; i++) {		
+	for (i = -max; i <= max; i++) {
 		/* New direction */
-		new_dir = cycle[chome[prev_dir] + i];
-		
+		int idx = chome[prev_dir] + i;
+
+		if (idx < 0 || idx >= CYCLE_LEN) {
+			msg("Auto-run aborted: cycle index out of range (%d) (2nd loop)", idx);
+			return true;
+		}
+
+		new_dir = cycle[idx];
+
+		if (new_dir < 0 || new_dir >= DDGRID_LEN) {
+			msg("Auto-run aborted: invalid new_dir=%d (2nd loop)", new_dir);
+			return true;
+		}
+
 		/* New location */
-		grid = loc_sum(p->grid, loc_sum(ddgrid[prev_dir], ddgrid[new_dir]));
-		
+		grid = loc_sum(p->grid,
+		               loc_sum(ddgrid[prev_dir], ddgrid[new_dir]));
+
 		/* HACK: Ugh. Sometimes we come up with illegal bounds. This will
-		 * treat the symptom but not the disease. */
-		if (!square_in_bounds(cave, grid)) continue;
+		 * treat the symptom but not the disease. TODO: Can this be removed? */
+		if (!square_in_bounds(cave, grid))
+			continue;
 
 		/* Obvious monsters abort running */
 		if (square(cave, grid)->mon > 0) {
@@ -1807,7 +1852,18 @@ static bool run_test(const struct player *p)
 	if (run_open_area) {
 		/* Look again */
 		for (i = -max; i < 0; i++) {
-			new_dir = cycle[chome[prev_dir] + i];
+			int idx = chome[prev_dir] + i;
+			if (idx < 0 || idx >= CYCLE_LEN) {
+				msg("Auto-run aborted: cycle index out of range (%d) (open-area L)", idx);
+				return true;
+			}
+
+			new_dir = cycle[idx];
+			if (new_dir < 0 || new_dir >= DDGRID_LEN) {
+				msg("Auto-run aborted: invalid new_dir=%d (open-area L)", new_dir);
+				return true;
+			}
+
 			grid = loc_sum(p->grid, ddgrid[new_dir]);
 
 			/* Unknown grid or non-wall */
@@ -1826,7 +1882,18 @@ static bool run_test(const struct player *p)
 
 		/* Look again */
 		for (i = max; i > 0; i--) {
-			new_dir = cycle[chome[prev_dir] + i];
+			int idx = chome[prev_dir] + i;
+			if (idx < 0 || idx >= CYCLE_LEN) {
+				msg("Auto-run aborted: cycle index out of range (%d) (open-area R)", idx);
+				return true;
+			}
+
+			new_dir = cycle[idx];
+			if (new_dir < 0 || new_dir >= DDGRID_LEN) {
+				msg("Auto-run aborted: invalid new_dir=%d (open-area R)", new_dir);
+				return true;
+			}
+
 			grid = loc_sum(p->grid, ddgrid[new_dir]);
 
 			/* Unknown grid or non-wall */
@@ -1862,7 +1929,7 @@ static bool run_test(const struct player *p)
 	}
 
 	/* About to hit a known wall, stop */
-		if (see_wall(run_cur_dir, p->grid))
+	if (see_wall(run_cur_dir, p->grid))
 		return true;
 
 	/* Failure */
