@@ -236,6 +236,7 @@ jobs:
             mingw-w64-clang-x86_64-cmake
             mingw-w64-clang-x86_64-ninja
             mingw-w64-clang-x86_64-libpng
+            winpty
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -254,4 +255,4 @@ jobs:
       - name: Run Tests with ASAN/UBSAN
         run: |
           cd build
-          cmd /c ninja -j$(nproc) alltests
+          winpty ninja -j$(nproc) alltests

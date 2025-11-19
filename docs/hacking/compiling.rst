@@ -406,14 +406,15 @@ be done with a Release binary though.
 Note that LTO (CMAKE_INTERPROCEDURAL_OPTIMIZATION / -fno-lto) should be OFF in
 particular for Release builds where it is switched on by default.
 
-Run the game from a command prompt (cmd) because Windows won't printf to an
-MSYS2 terminal.
-We also still need the path from the MSYS2 shell so that it can find the
+Run the tests or the game from winpty because Windows won't printf to an MSYS2
+terminal. We also still need the path from the MSYS2 shell so that it can find the
 required DLLs (libclang_rt.asan_dynamic-x86_64.dll and libc++.dll), although
 we can also copy those.
 
+    winpty ninja alltests
+
     cd game
-    cmd /c angband
+    winpty ./angband.exe
 
 Test cases
 ~~~~~~~~~~
