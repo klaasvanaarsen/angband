@@ -137,7 +137,7 @@ jobs:
           ./autogen.sh
           ./configure --enable-win
           make install
-          make tests
+          make -j$(nproc) tests
 
   cmake-win32:
     runs-on: windows-latest
