@@ -376,7 +376,8 @@ When debugging crashes it can be very useful to get more information about *what
 
 Note that compiling with these tools will require installing additional dependencies: libubsan libasan (names of the packages might be different in your distribution).
 
-To use ASan and UBSan on Windows, you need MSYS2 CLANG64 since other shells and compilers do not properly support ASan/UBSan at the time of this writing.
+To use ASan and UBSan on Windows, you need MSYS2 CLANG64 since other shells and
+compilers do not properly support ASan/UBSan at the time of this writing.
 
 Run:
 
@@ -398,24 +399,21 @@ Install dependencies and build with:
         ..
     ninja
 
-Note that UBSAN detection relies on somewhat on debug builds because some undefined behavior is otherwise optimized out before it can be detected
-and it relies on -g to get readable stack traces. ASAN can and probably should be done with a release binary though.
-Note that LTO (CMAKE_INTERPROCEDURAL_OPTIMIZATION) should be OFF in particular for release builds where it is switched on by default.
+Note that UBSAN detection relies somewhat on Debug builds because some
+undefined behavior is otherwise optimized out before it can be detected
+and it relies on -g to get readable stack traces. ASAN can and probably should
+be done with a Release binary though.
+Note that LTO (CMAKE_INTERPROCEDURAL_OPTIMIZATION / -fno-lto) should be OFF in
+particular for Release builds where it is switched on by default.
 
-Set ASAN_OPTIONS and UBSAN_OPTIONS to log to file since a Windows application in an MSYS2 terminal cannot print to the terminal. Then start the game:
-
-    cd game
-    export ASAN_OPTIONS=log_path=asan.log:abort_on_error=1
-    export UBSAN_OPTIONS=log_path=ubsan.log:print_stacktrace=1
-    ./angband
-
-Alternatively we can modify `main-win.c` to attach a console and restore printf behavior. Then we can do:
+Run the game from a command prompt (cmd) because Windows won't printf to an
+MSYS2 terminal.
+We also still need the path from the MSYS2 shell so that it can find the
+required DLLs (libclang_rt.asan_dynamic-x86_64.dll and libc++.dll), although
+we can also copy those.
 
     cd game
     cmd /c angband
-
-We need to switch to a command prompt (cmd) because Windows won't printf to an MSYS2 terminal.
-We also still need the path from the MSYS2 shell so that it can find the required DLLs (libclang_rt.asan_dynamic-x86_64.dll and libc++.dll), although we can also copy those.
 
 Test cases
 ~~~~~~~~~~

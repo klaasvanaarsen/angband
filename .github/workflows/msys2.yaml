@@ -231,11 +231,11 @@ jobs:
           update: true
           msystem: CLANG64
           install: >-
-            mingw-w64-clang-x86_64-clang 
-            mingw-w64-clang-x86_64-compiler-rt 
-            mingw-w64-clang-x86_64-cmake 
+            mingw-w64-clang-x86_64-clang
+            mingw-w64-clang-x86_64-compiler-rt
+            mingw-w64-clang-x86_64-cmake
             mingw-w64-clang-x86_64-ninja
-            mingw-w64-clang-x86_64-libpng 
+            mingw-w64-clang-x86_64-libpng
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -245,12 +245,13 @@ jobs:
           mkdir build
           cd build
           cmake -G Ninja \
-              -DCMAKE_BUILD_TYPE=Debug \
-              -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -g" \
-              ..
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
+            -DCMAKE_C_FLAGS="-fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
+            ..
           ninja -j$(nproc) --verbose
 
       - name: Run Tests with ASAN/UBSAN
         run: |
           cd build
-          ninja -j$(nproc) alltests
+          cmd /c ninja -j$(nproc) alltests
