@@ -257,7 +257,7 @@ jobs:
           cmake -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-            -DCMAKE_C_FLAGS="-Werror -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
+            -DCMAKE_C_FLAGS="-Werror -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -fno-lto -g" \
             ..
           ninja -j$(nproc) --verbose
 
@@ -265,3 +265,45 @@ jobs:
         run: |
           cd build
           ninja -j$(nproc) alltests
+
+      - name: Verify ASan & UBSan fail as expected
+        run: |
+          set -eu
+
+          echo "=== Creating test files ==="
+
+          cat > asan_only.c << 'EOF'
+          #include <stdlib.h>
+          int main(void) {
+              char *p = malloc(1);
+              p[5] = 'X';  // ASan: heap-buffer-overflow
+              free(p);
+              return 0;
+          }
+          EOF
+
+          cat > ubsan_only.c << 'EOF'
+          int main(void) {
+              int x = 2147483647;
+              x += 1;  // UBSan: signed integer overflow
+              return x;
+          }
+          EOF
+
+          echo "=== Building tests ==="
+
+          clang -fsanitize=address asan_only.c -o asan_only
+          clang -fsanitize=undefined -fno-sanitize-recover=undefined ubsan_only.c -o ubsan_only
+
+          echo "=== Running ASan test (should FAIL, but not fail CI) ==="
+          if ./asan_only 2>asan_err.log; then
+              echo "::error::ASan test unexpectedly passed"
+              exit 1
+          else
+              echo "ASan failed as expected:"
+              sed -n '1,10p' asan_err.log
+          fi
+
+          echo "=== Running UBSan test (should FAIL and FAIL CI) ==="
+          # This one must abort CI — so no protective wrapper
+          ./ubsan_only
