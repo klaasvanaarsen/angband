@@ -257,11 +257,67 @@ jobs:
           cmake -G Ninja \
             -DCMAKE_BUILD_TYPE=Debug \
             -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-            -DCMAKE_C_FLAGS="-Werror -fsanitize=address -fsanitize=undefined -fno-omit-frame-pointer -fno-lto -g" \
+            -DCMAKE_C_FLAGS="-Werror -fsanitize=address -fsanitize=undefined -fno-sanitize-recover=undefined -fno-omit-frame-pointer -fno-lto -g" \
             ..
           ninja -j$(nproc) --verbose
 
       - name: Run Tests with ASAN/UBSAN
         run: |
           cd build
-          ninja -j$(nproc) alltests
+          ninja -j$(nproc) --verbose alltests
+
+      - name: Validate ASan and UBSan operation
+        run: |
+          echo "=== ASan test (should FAIL but CI continues) ==="
+          cat > asan_only.c << 'EOF'
+          #include <stdlib.h>
+          int main() {
+              char *p = malloc(1);
+              p[4] = 0; // heap buffer overflow
+              return 0;
+          }
+          EOF
+
+          clang -fsanitize=address asan_only.c -o asan_only.exe
+
+          if ./asan_only.exe 2>asan.log; then
+              echo "::error::ASan test unexpectedly passed"
+              exit 1
+          fi
+
+          if ! grep -q "AddressSanitizer" asan.log; then
+              echo "::error::ASan did not report expected error"
+              sed -n '1,20p' asan.log
+              exit 1
+          fi
+
+          echo "ASan failed correctly:"
+          sed -n '1,5p' asan.log
+
+          echo "=== UBSan test (should FAIL but CI continues) ==="
+          cat > ubsan_only.c << 'EOF'
+          int main() {
+              int x = 2147483647;
+              return x + 1; // signed overflow
+          }
+          EOF
+
+          # UBSan: must fail with nonzero exit
+          clang -fsanitize=undefined -fno-sanitize-recover=undefined ubsan_only.c -o ubsan_only.exe
+
+          # UBSan must return non-zero
+          if ./ubsan_only.exe 2>ubsan.log; then
+              echo "::error::UBSan test unexpectedly passed"
+              exit 1
+          fi
+
+          if ! grep -q "runtime error" ubsan.log; then
+              echo "::error::UBSan did not report expected runtime error"
+              sed -n '1,20p' ubsan.log
+              exit 1
+          fi
+
+          echo "UBSan failed correctly:"
+          sed -n '1,5p' ubsan.log
+
+          echo "=== Sanitizer validation succeeded ==="
