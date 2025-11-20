@@ -30,7 +30,8 @@ function(DETERMINE_PNG PNG_TARGET PNG_DLLS USE_BUNDLED)
     find_package(PNG QUIET)
     if(NOT PNG_FOUND)
         message(FATAL_ERROR
-            "System PNG not found. For 32-bit builds, enable -DSUPPORT_BUNDLED_PNG=ON.")
+            "System PNG not found. If you are building a 32-bit x86 Windows binary, "
+            "enable -DSUPPORT_BUNDLED_PNG=ON")
     endif()
 
     # Temporary override for static search

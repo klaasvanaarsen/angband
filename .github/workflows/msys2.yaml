@@ -182,15 +182,6 @@ jobs:
           cd build
           ninja -j$(nproc) alltests
 
-      - name: Configure and build with bundled PNG
-        run: |
-          mkdir -p build
-          cd build
-          cmake -G Ninja -DSUPPORT_WINDOWS_FRONTEND=ON -DSUPPORT_BUNDLED_PNG=ON \
-            -DCMAKE_C_FLAGS="-Werror" \
-            ..
-          ninja -j$(nproc)
-
   cmake-win64:
     runs-on: windows-latest
     defaults:
