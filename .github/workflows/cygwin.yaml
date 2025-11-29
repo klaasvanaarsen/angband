@@ -1,0 +1,58 @@
+name: cygwin
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  stock:
+    name: Stock
+    runs-on: windows-latest
+
+    steps:
+      - name: Set up prerequisites
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri https://cygwin.com/setup-x86_64.exe -OutFile setup.exe
+          .\setup.exe -q -P cmake,ninja,mingw64-i686-gcc-core,mingw64-i686-windres
+
+      - name: Clone Project
+        uses: actions/checkout@v4
+
+      - name: Build & test inside Cygwin
+        shell: C:\cygwin64\bin\bash.exe --login -eo pipefail {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          mkdir build && cd build
+          cmake -G Ninja \
+            -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc \
+            -DCMAKE_RC_COMPILER=/usr/bin/i686-w64-mingw32-windres \
+            -DSUPPORT_WINDOWS_FRONTEND=ON \
+            -DSUPPORT_BUNDLED_PNG=ON \
+            ..
+          ninja -j$(nproc) --verbose
+          ninja -j$(nproc) --verbose alltests
+
+  autotools:
+    name: Autotools
+    runs-on: windows-latest
+
+    steps:
+      - name: Set up prerequisites
+        shell: powershell
+        run: |
+          Invoke-WebRequest -Uri https://cygwin.com/setup-x86_64.exe -OutFile setup.exe
+          .\setup.exe -q -P autoconf,automake,make,mingw64-i686-gcc-core
+
+      - name: Clone Project
+        uses: actions/checkout@v4
+
+      - name: Build & test inside Cygwin
+        shell: C:\cygwin64\bin\bash.exe --login -eo pipefail {0}
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          ./autogen.sh
+          ./configure --enable-win --host=i686-w64-mingw32
+          make -j$(nproc) VERBOSE=1
+          make -j$(nproc) VERBOSE=1 alltests          
