@@ -1,0 +1,81 @@
+name: cygwin
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  stock:
+    name: Stock
+    runs-on: windows-latest
+
+    steps:
+      - name: Set up prerequisites
+        shell: powershell
+        run: |
+          $mirror = "https://mirrors.kernel.org/sourceware/cygwin/"
+          Invoke-WebRequest -Uri https://cygwin.com/setup-x86_64.exe -OutFile setup.exe
+          .\setup.exe `
+            -qnNdO `
+            -R C:\cygwin64 `
+            -s $mirror `
+            -P cmake,ninja `
+            -P mingw64-i686-gcc-core
+
+      - uses: actions/checkout@v4
+
+      - name: Configure + Build (MinGW32 cross, inside Cygwin)
+        shell:
+          cmd: C:\cygwin64\bin\bash.exe
+          args:
+            - --login
+            - -eo
+            - pipefail
+            - "{0}"
+        run: |
+          echo "$GITHUB_WORKSPACE"
+          cd "$(cygpath -u "$GITHUB_WORKSPACE")"
+          mkdir build && cd build
+          cmake -G Ninja \
+            -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc \
+            -DCMAKE_RC_COMPILER=/usr/bin/i686-w64-mingw32-windres \
+            -DSUPPORT_WINDOWS_FRONTEND=ON \
+            -DSUPPORT_BUNDLED_PNG=ON \
+            ..
+          ninja -j$(nproc) --verbose
+          ninja -j$(nproc) --verbose alltests
+
+  autotools:
+    name: Autotools
+    runs-on: windows-latest
+
+    steps:
+      - name: Set up prerequisites
+        shell: powershell
+        run: |
+          $mirror = "https://mirrors.kernel.org/sourceware/cygwin/"
+          Invoke-WebRequest -Uri https://cygwin.com/setup-x86_64.exe -OutFile setup.exe
+          .\setup.exe `
+            -qnNdO `
+            -R C:\cygwin64 `
+            -s $mirror `
+            -P autoconf,automake,make `
+            -P mingw64-i686-gcc-core
+
+      - uses: actions/checkout@v4
+
+      - name: Configure + Build (MinGW32 cross, inside Cygwin)
+        shell:
+          cmd: C:\cygwin64\bin\bash.exe
+          args:
+            - --login
+            - -eo
+            - pipefail
+            - "{0}"
+        run: |
+          cd "$(cygpath -u "$GITHUB_WORKSPACE")"
+          ./autogen.sh
+          ./configure --enable-win --host=i686-w64-mingw32
+          make -j$(nproc) VERBOSE=1
+          make -j$(nproc) VERBOSE=1 alltests
