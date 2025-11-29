@@ -1,0 +1,102 @@
+name: cygwin
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+
+jobs:
+  stock:
+    name: Stock
+    runs-on: windows-latest
+
+    steps:
+      - name: Set up Cygwin
+        uses: egor-tensin/setup-cygwin@v4
+        with:
+          packages: cmake ninja mingw64-i686-gcc-core
+
+      # Cygwin executables are added to PATH, so you can call them directly:
+      - run: |
+          ls.exe -Al
+          pwd.exe
+
+      # Alternatively, you can set Cygwin's bash as the shell to use:
+      - run: |
+          # This is a real bash script!
+          basic() {
+              ls -Al
+              pwd
+          }
+          basic
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        
+      - uses: actions/checkout@v4
+
+      - name: Configure + Build (MinGW32 cross, inside Cygwin) without shell change
+        run: |
+          pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          cd "$(cygpath -u "$GITHUB_WORKSPACE")"
+          echo "PATH=$PATH"
+          ls /usr/bin/cm*
+          which cmake
+          mkdir build && cd build
+          cmake -G Ninja \
+            -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc \
+            -DCMAKE_RC_COMPILER=/usr/bin/i686-w64-mingw32-windres \
+            -DSUPPORT_WINDOWS_FRONTEND=ON \
+            -DSUPPORT_BUNDLED_PNG=ON \
+            ..
+          ninja -j$(nproc) --verbose
+          ninja -j$(nproc) --verbose alltests
+
+      - name: Configure + Build (MinGW32 cross, inside Cygwin) with shell change
+        shell: C:\tools\cygwin\bin\bash.exe --login --norc -eo pipefail -o igncr '{0}'
+        run: |
+          pwd
+          echo "GITHUB_WORKSPACE=$GITHUB_WORKSPACE"
+          cd "$(cygpath -u "$GITHUB_WORKSPACE")"
+          echo "PATH=$PATH"
+          ls /usr/bin/cm*
+          which cmake
+          mkdir build && cd build
+          cmake -G Ninja \
+            -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc \
+            -DCMAKE_RC_COMPILER=/usr/bin/i686-w64-mingw32-windres \
+            -DSUPPORT_WINDOWS_FRONTEND=ON \
+            -DSUPPORT_BUNDLED_PNG=ON \
+            ..
+          ninja -j$(nproc) --verbose
+          ninja -j$(nproc) --verbose alltests
+
+  # autotools:
+  #   name: Autotools
+  #   runs-on: windows-latest
+
+  #   steps:
+  #     - name: Set up prerequisites
+  #       shell: powershell
+  #       run: |
+  #         $mirror = "https://mirrors.kernel.org/sourceware/cygwin/"
+  #         Invoke-WebRequest -Uri https://cygwin.com/setup-x86_64.exe -OutFile setup.exe
+  #         .\setup.exe `
+  #           -qnNdO `
+  #           -R C:\cygwin64 `
+  #           -s $mirror `
+  #           -P autoconf,automake,make `
+  #           -P mingw64-i686-gcc-core
+
+  #     - uses: actions/checkout@v4
+
+  #     - name: Configure + Build (MinGW32 cross, inside Cygwin)
+  #       shell: C:\cygwin64\bin\bash.exe --login -eo pipefail '{0}'
+  #       run: |
+  #         cd "$(cygpath -u "$GITHUB_WORKSPACE")"
+  #         echo "PATH=$PATH"
+  #         ls /usr/bin/a*
+  #         which aclocal
+  #         ./autogen.sh
+  #         ./configure --enable-win --host=i686-w64-mingw32
+  #         make -j$(nproc) VERBOSE=1
+  #         make -j$(nproc) VERBOSE=1 alltests
