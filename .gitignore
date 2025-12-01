@@ -18,7 +18,6 @@
 .project
 .settings
 .vs/
-.vscode/
 /*.vcxproj*
 aclocal.m4
 angband
