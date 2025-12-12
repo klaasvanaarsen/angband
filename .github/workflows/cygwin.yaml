@@ -32,6 +32,7 @@ jobs:
           cd "$(cygpath -u "$GITHUB_WORKSPACE")"
           mkdir build && cd build
           cmake -G Ninja \
+            -DCMAKE_C_FLAGS="-Werror" \
             -DCMAKE_C_COMPILER=/usr/bin/i686-w64-mingw32-gcc \
             -DCMAKE_RC_COMPILER=/usr/bin/i686-w64-mingw32-windres \
             -DSUPPORT_WINDOWS_FRONTEND=ON \

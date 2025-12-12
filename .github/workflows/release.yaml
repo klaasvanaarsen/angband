@@ -156,7 +156,7 @@ jobs:
       - name: Convert
         run: |
           ./autogen.sh
-          ./configure SPHINXBUILD="${PWD}/sphinx-build" --with-no-install --with-sphinx
+          env CFLAGS="-Werror" ./configure SPHINXBUILD="${PWD}/sphinx-build" --with-no-install --with-sphinx
           make -j$(nproc) manual
 
       - name: Archive
@@ -206,7 +206,7 @@ jobs:
         id: create_source_archive
         run: |
           ./autogen.sh
-          ./configure
+          env CFLAGS="-Werror" ./configure
           archive_prefix=${{ steps.store_config.outputs.name }}-${{ steps.store_config.outputs.version }}
           echo "archive_file=${archive_prefix}.tar.gz" >> $GITHUB_OUTPUT
           make -j$(nproc) TAG="$archive_prefix" OUT="$archive_prefix".tar.gz dist
@@ -295,7 +295,7 @@ jobs:
         id: create_windows_archive
         run: |
           ./autogen.sh
-          env CFLAGS="-O2" ./configure --enable-release --enable-win --build=i686-pc-linux-gnu --host=i686-w64-mingw32
+          env CFLAGS="-Werror -O2" ./configure --enable-release --enable-win --build=i686-pc-linux-gnu --host=i686-w64-mingw32
           make -j$(nproc)
           cp src/${{ steps.store_config.outputs.prog }}.exe src/win/dll/libpng12.dll src/win/dll/zlib1.dll .
           archive_prefix=${{ steps.store_config.outputs.name }}-${{ steps.store_config.outputs.version }}
@@ -366,7 +366,7 @@ jobs:
         id: create_mac_archive
         run: |
           cd src
-          env OPT="-O2 -DNDEBUG" make -f Makefile.osx -j$(sysctl -n hw.ncpu) dist
+          env CFLAGS="-Werror" OPT="-O2 -DNDEBUG" make -f Makefile.osx -j$(sysctl -n hw.ncpu) dist
           archive_prefix=${{ steps.store_config.outputs.name }}-${{ steps.store_config.outputs.version }}-osx
           echo "archive_file=${archive_prefix}.dmg" >> $GITHUB_OUTPUT
 
