@@ -29,6 +29,7 @@ DISTCLEAN = autoconf.h tests/.deps
 $(PROG): $(PROGNAME).a $(MAINFILES)
 	$(CC) -o $@ $(MAINFILES) $(PROGNAME).a $(LDFLAGS) $(LDADD) $(LIBS)
 	@printf "%10s %-20s\n" LINK $@
+	@echo "$(CC) CFLAGS=$(CFLAGS) LDFLAGS=$(LDFLAGS)"
 
 win/$(PROGNAME).res: win/$(PROGNAME).rc
 	$(RC) $< -O coff -o $@
