@@ -7,14 +7,14 @@ on:
 
 jobs:
   build:
-    name: Stock
+    name: DOS build and runtime test
     runs-on: ubuntu-latest
     steps:
       - name: Install Build Dependencies
         id: install_depend
         run: |
           sudo apt-get update
-          sudo apt-get install make
+          sudo apt-get install make dosbox-x
 
       - name: Clone Project
         uses: actions/checkout@v4
@@ -28,3 +28,32 @@ jobs:
           PATH="$PATH":"`pwd`/djgpp/bin"
           cd src
           make -f Makefile.ibm -j$(nproc)
+
+      - name: Prepare DOS runtime environment
+        run: |
+          mkdir -p dosroot
+          cp src/*.exe dosroot/
+          cp -r lib dosroot/
+
+      - name: DOS runtime smoke test
+        timeout-minutes: 2
+        run: |
+          cat > dosbox.conf << 'EOF'
+          [sdl]
+          fullscreen=false
+
+          [dosbox]
+          machine=svga_s3
+
+          [cpu]
+          core=normal
+          cycles=auto
+
+          [autoexec]
+          mount c dosroot
+          c:
+          angband.exe
+          exit
+          EOF
+
+          dosbox-x -conf dosbox.conf -nogui -exit
