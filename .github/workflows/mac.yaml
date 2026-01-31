@@ -2,7 +2,7 @@ name: Mac
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, build/remove-autotools-in-favor-of-cmake ]
   pull_request:
 
 jobs:
@@ -29,22 +29,3 @@ jobs:
           cd src
           env OPT="-Werror -O2 -DNDEBUG" make -f Makefile.osx -j$(sysctl -n hw.ncpu)
 
-  autoconf:
-    runs-on: macos-latest
-    steps:
-      # Requires autoconf and automake; install those via homebrew (available
-      # by default).
-      - name: Install Build Dependencies
-        run: |
-          brew install m4
-          brew install autoconf
-          brew install automake
-
-      - name: Clone Project
-        uses: actions/checkout@v4
-
-      - name: Build
-        run: |
-          ./autogen.sh
-          ./configure --with-no-install --enable-curses --disable-ncursestest
-          make

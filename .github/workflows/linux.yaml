@@ -2,7 +2,7 @@ name: Linux
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, build/remove-autotools-in-favor-of-cmake ]
   pull_request:
 
 jobs:
@@ -101,26 +101,6 @@ jobs:
           cd build
           cmake -G Ninja -DCMAKE_C_FLAGS="-Werror" -DSUPPORT_SDL2_FRONTEND=ON -DSUPPORT_SDL2_SOUND=ON ..
           ninja -j$(nproc)
-
-  statbuild:
-    name: Statistics Build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Install Build Dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install gcc autoconf automake make libsqlite3-dev libsdl1.2-dev libsdl-mixer1.2-dev
-
-      - name: Clone Project
-        uses: actions/checkout@v4
-
-      # Turn on sound and the test front end so more of the basic
-      # infrastructure is compiled.
-      - name: Build
-        run: |
-          ./autogen.sh
-          env CFLAGS="-Wvla -Wlogical-op" ./configure --with-no-install --enable-stats --enable-test --enable-sdl-mixer
-          make -j$(nproc)
 
   makefilestd:
     name: Makefile.std
