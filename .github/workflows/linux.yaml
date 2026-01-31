@@ -2,7 +2,7 @@ name: Linux
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master, build/remove-autotools-in-favor-of-cmake ]
   pull_request:
 
 jobs:
