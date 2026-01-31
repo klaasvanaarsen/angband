@@ -1,0 +1,6 @@
+#!/bin/sh
+echo "Autotools support has been removed."
+echo "Please build Angband using CMake:"
+echo "  cmake -S . -B build"
+echo "  cmake --build build"
+exit 1
