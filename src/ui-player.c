@@ -831,8 +831,9 @@ static struct panel *get_panel_misc(void) {
 	panel_line(p, attr, "Height", "%d'%d\"", player->ht / 12, player->ht % 12);
 	panel_line(p, attr, "Weight", "%dst %dlb", player->wt / 14, player->wt % 14);
 	panel_line(p, attr, "Turns used:", "");
-	panel_line(p, attr, "Game", "%d", turn);
-	panel_line(p, attr, "Standard", "%d", player->total_energy / 100);
+	panel_line(p, attr, "Game", "%d.%d", turn / 10, turn % 10);
+	panel_line(p, attr, "Standard", "%d.%02d", player->total_energy / 100,
+		player->total_energy % 100);
 	panel_line(p, attr, "Resting", "%d", player->resting_turn);
 
 	return p;

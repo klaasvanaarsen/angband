@@ -81,6 +81,8 @@ static game_event_type player_events[] =
 
 	EVENT_PLAYERSPEED,
 	EVENT_DUNGEONLEVEL,
+
+	EVENT_REFRESH,  /* For the turn counters */
 };
 
 static game_event_type statusline_events[] =
@@ -260,6 +262,41 @@ static void prt_gold(int row, int col)
 	put_str("AU ", row, col);
 	strnfmt(tmp, sizeof(tmp), "%9ld", (long)player->au);
 	c_put_str(COLOUR_L_GREEN, tmp, row, col + 3);
+}
+
+
+/**
+ * Prints the turn counters: game turns and level turns (in units of 10 game
+ * turns, the unit of rod and player timeouts) and standard turns
+ */
+static void prt_tenth_line(const char *label, unsigned long val, int row,
+		int col)
+{
+	char tmp[32];
+
+	put_str(label, row, col);
+	strnfmt(tmp, sizeof(tmp), "%7lu.%lu", val / 10, val % 10);
+	c_put_str(COLOUR_L_BLUE, tmp, row, col + 3);
+}
+
+static void prt_game_turns(int row, int col)
+{
+	prt_tenth_line("Gam", (unsigned long)turn, row, col);
+}
+
+static void prt_level_turns(int row, int col)
+{
+	prt_tenth_line("Lev", (unsigned long)(turn - level_start_turn), row, col);
+}
+
+static void prt_std_turns(int row, int col)
+{
+	char tmp[32];
+	unsigned long e = (unsigned long)player->total_energy;
+
+	put_str("Std", row, col);
+	strnfmt(tmp, sizeof(tmp), "%6lu.%02lu", e / 100, e % 100);
+	c_put_str(COLOUR_L_BLUE, tmp, row, col + 3);
 }
 
 
@@ -815,6 +852,10 @@ static const struct side_handler_t
 	{ prt_exp,     16, EVENT_EXPERIENCE },
 	{ prt_gold,    11, EVENT_GOLD },
 	{ prt_equippy, 17, EVENT_EQUIPMENT },
+	{ prt_game_turns, 23, EVENT_REFRESH },
+	{ prt_level_turns, 28, EVENT_REFRESH },
+	{ prt_std_turns,  24, EVENT_REFRESH },
+	{ NULL,         26, 0 },
 	{ prt_str,      6, EVENT_STATS },
 	{ prt_int,      5, EVENT_STATS },
 	{ prt_wis,      4, EVENT_STATS },
@@ -1260,7 +1301,15 @@ static size_t prt_tmd(int row, int col)
 			}
 			if (!grade->name) continue;
 			c_put_str(grade->color, grade->name, row, col + len);
-			len += strlen(grade->name) + 1;
+			len += strlen(grade->name);
+
+			/* Remaining turns (food has its own meter) */
+			if (i != TMD_FOOD) {
+				char *turns = format(" %d", player->timed[i]);
+				c_put_str(grade->color, turns, row, col + len);
+				len += strlen(turns);
+			}
+			len++;
 
 			/* Food meter */
 			if (i == TMD_FOOD) {
