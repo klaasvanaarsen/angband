@@ -40,6 +40,7 @@
 #include "z-queue.h"
 
 uint16_t daycount = 0;
+uint32_t level_start_turn = 0;
 uint32_t seed_randart;		/* Consistent random artifacts */
 uint32_t seed_flavor;		/* Consistent object colors */
 int32_t turn;			/* Current game turn */
@@ -936,6 +937,9 @@ void on_new_level(void)
 
 		/* Cancel the health bar */
 		health_track(player->upkeep, NULL);
+
+		/* Start counting game turns spent on this level */
+		level_start_turn = turn;
 	}
 
 	/* Disturb */

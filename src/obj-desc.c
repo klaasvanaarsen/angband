@@ -498,11 +498,18 @@ static size_t obj_desc_charges(const struct object *obj, char *buf, size_t max,
 		strnfcat(buf, max, &end, " (%d charge%s)", obj->pval,
 				 PLURAL(obj->pval));
 	} else if (obj->timeout > 0) {
-		if (tval_is_rod(obj) && obj->number > 1)
-			strnfcat(buf, max, &end, " (%d charging)", number_charging(obj));
-		else if (tval_is_rod(obj) || obj->activation || obj->effect)
+		if (tval_is_rod(obj) && obj->number > 1) {
+			int n = number_charging(obj);
+			int ct = randcalc(obj->time, 0, AVERAGE);
+			/* Turns until the next rod in the stack is ready */
+			int left = (obj->timeout - (n - 1) * ct + n - 1) / n;
+
+			if (left < 1) left = 1;
+			strnfcat(buf, max, &end, " (%d charging, %d turns)", n, left);
+		} else if (tval_is_rod(obj) || obj->activation || obj->effect)
 			/* Artifacts, single rods */
-			strnfcat(buf, max, &end, " (charging)");
+			strnfcat(buf, max, &end, " (charging, %d turns)",
+				(int)obj->timeout);
 	}
 
 	return end;

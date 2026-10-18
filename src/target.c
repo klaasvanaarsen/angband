@@ -83,15 +83,33 @@ void look_mon_desc(char *buf, size_t max, int m_idx)
 			my_strcpy(buf, (living ? "almost dead" : "almost destroyed"), max);
 	}
 
-	/* Effect status */
-	if (mon->m_timed[MON_TMD_SLEEP]) my_strcat(buf, ", asleep", max);
-	if (mon->m_timed[MON_TMD_HOLD]) my_strcat(buf, ", held", max);
-	if (mon->m_timed[MON_TMD_DISEN]) my_strcat(buf, ", disenchanted", max);
-	if (mon->m_timed[MON_TMD_CONF]) my_strcat(buf, ", confused", max);
-	if (mon->m_timed[MON_TMD_FEAR]) my_strcat(buf, ", afraid", max);
-	if (mon->m_timed[MON_TMD_STUN]) my_strcat(buf, ", stunned", max);
-	if (mon->m_timed[MON_TMD_SLOW]) my_strcat(buf, ", slowed", max);
-	if (mon->m_timed[MON_TMD_FAST]) my_strcat(buf, ", hasted", max);
+	/* Effect status, with the number of turns left */
+	{
+		static const struct {
+			int tmd;
+			const char *name;
+		} effects[] = {
+			{ MON_TMD_SLEEP, "asleep" },
+			{ MON_TMD_HOLD, "held" },
+			{ MON_TMD_DISEN, "disenchanted" },
+			{ MON_TMD_CONF, "confused" },
+			{ MON_TMD_FEAR, "afraid" },
+			{ MON_TMD_STUN, "stunned" },
+			{ MON_TMD_SLOW, "slowed" },
+			{ MON_TMD_FAST, "hasted" },
+		};
+		size_t i;
+
+		for (i = 0; i < N_ELEMENTS(effects); i++) {
+			if (mon->m_timed[effects[i].tmd]) {
+				char tmp[48];
+
+				strnfmt(tmp, sizeof(tmp), ", %s %d", effects[i].name,
+					(int)mon->m_timed[effects[i].tmd]);
+				my_strcat(buf, tmp, max);
+			}
+		}
+	}
 }
 
 
