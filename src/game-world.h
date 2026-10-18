@@ -30,6 +30,7 @@ struct level {
 };
 
 extern uint16_t daycount;
+extern uint32_t level_start_turn;
 extern uint32_t seed_randart;
 extern uint32_t seed_flavor;
 extern int32_t turn;
