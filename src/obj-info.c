@@ -26,6 +26,7 @@
 #include "monster.h"
 #include "mon-util.h"
 #include "obj-curse.h"
+#include "obj-desc.h"
 #include "obj-gear.h"
 #include "obj-info.h"
 #include "obj-knowledge.h"
@@ -1773,6 +1774,121 @@ static void obj_known_misc_combat(const struct object *obj, bool *thrown_effect,
 /**
  * Describe combat advantages.
  */
+static void describe_hit_dam_parts(textblock *tb, const struct object *obj,
+		bool weapon, const struct object *bow)
+{
+	struct player_state state;
+	int i, skill, base_h, base_d, equip_h = 0, equip_d = 0;
+	int stat_h, stat_d, other_h, other_d, total_h;
+	int weapon_slot = slot_by_name(player, "weapon");
+	bool listed = false;
+	struct object *current_weapon = slot_object(player, weapon_slot);
+
+	/* Pretend we're wielding the weapon */
+	if (weapon)
+		player->body.slots[weapon_slot].obj = (struct object *) obj;
+	memcpy(&state, &player->state, sizeof(state));
+	state.stat_ind[STAT_STR] = 0;
+	state.stat_ind[STAT_DEX] = 0;
+	calc_bonuses(player, &state, true, false);
+	player->body.slots[weapon_slot].obj = current_weapon;
+
+	/* Bonuses from equipment other than the weapon and launcher */
+	for (i = 0; i < player->body.count; i++) {
+		struct object *eq = slot_object(player, i);
+
+		if (!eq || !eq->known) continue;
+		if (slot_type_is(player, i, EQUIP_WEAPON)
+				|| slot_type_is(player, i, EQUIP_BOW)) continue;
+		equip_h += object_to_hit(eq->known);
+		equip_d += object_to_dam(eq->known);
+		if (object_to_hit(eq->known) || object_to_dam(eq->known)) {
+			char name[80];
+
+			object_desc(name, sizeof(name), eq, ODESC_BASE, player);
+			if (!listed)
+				textblock_append(tb, "Equipment bonuses (to-hit, to-dam):\n");
+			listed = true;
+			textblock_append(tb, "  %s: ", name);
+			textblock_append_c(tb, COLOUR_L_GREEN, "%+d, %+d\n",
+				object_to_hit(eq->known), object_to_dam(eq->known));
+		}
+	}
+
+	stat_h = adj_dex_th[state.stat_ind[STAT_DEX]]
+		+ adj_str_th[state.stat_ind[STAT_STR]];
+	stat_d = adj_str_td[state.stat_ind[STAT_STR]];
+	other_h = state.to_h - equip_h - stat_h;
+	other_d = state.to_d - equip_d - stat_d;
+
+	if (weapon) {
+		skill = state.skills[SKILL_TO_HIT_MELEE];
+		base_h = object_to_hit(obj->known);
+		base_d = object_to_dam(obj->known);
+		total_h = base_h + state.to_h;
+
+		textblock_append(tb, "To-hit: ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%d", skill + 3 * total_h);
+		textblock_append(tb, " = skill ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%d", skill);
+		textblock_append(tb, " + 3 x ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", total_h);
+		textblock_append(tb, "\n  weapon ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", base_h);
+		textblock_append(tb, ", other equipment ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", equip_h);
+		textblock_append(tb, ", STR/DEX ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", stat_h);
+		textblock_append(tb, ", other effects (blessing, heroism, stun, hunger, weight) ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", other_h);
+		textblock_append(tb, "\nTo-dam per blow: ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", base_d + state.to_d);
+		textblock_append(tb, "\n  weapon ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", base_d);
+		textblock_append(tb, ", other equipment ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", equip_d);
+		textblock_append(tb, ", STR ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", stat_d);
+		textblock_append(tb, ", other effects (stun, hunger, bloodlust, blessed weapon) ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", other_d);
+		textblock_append(tb, "\n");
+	} else {
+		int ammo_h = object_to_hit(obj->known);
+		int ammo_d = object_to_dam(obj->known);
+		int bow_h = object_to_hit(bow->known);
+		int bow_d = object_to_dam(bow->known);
+
+		skill = state.skills[SKILL_TO_HIT_BOW];
+		total_h = ammo_h + bow_h + state.to_h;
+
+		textblock_append(tb, "To-hit: ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%d", skill + 3 * total_h);
+		textblock_append(tb, " = skill ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%d", skill);
+		textblock_append(tb, " + 3 x ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", total_h);
+		textblock_append(tb, " (before distance penalty)\n  ammo ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", ammo_h);
+		textblock_append(tb, ", launcher ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", bow_h);
+		textblock_append(tb, ", other equipment ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", equip_h);
+		textblock_append(tb, ", STR/DEX ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", stat_h);
+		textblock_append(tb, ", other effects (blessing, heroism, stun, hunger, weight) ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", other_h);
+		textblock_append(tb, "\nTo-dam (before multiplier x");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%d", state.ammo_mult);
+		textblock_append(tb, "): ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", ammo_d + bow_d);
+		textblock_append(tb, "\n  ammo ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", ammo_d);
+		textblock_append(tb, ", launcher ");
+		textblock_append_c(tb, COLOUR_L_GREEN, "%+d", bow_d);
+		textblock_append(tb, "\n");
+	}
+}
+
 static bool describe_combat(textblock *tb, const struct object *obj)
 {
 	struct object *bow = equipped_item_by_slot_name(player, "shooting");
@@ -1809,6 +1925,8 @@ static bool describe_combat(textblock *tb, const struct object *obj)
 
 	if (weapon || ammo) {
 		describe_damage(tb, obj, false);
+		if (obj->known && obj->known->dd && obj->known->ds)
+			describe_hit_dam_parts(tb, obj, weapon, bow);
 	}
 	if (throwing_weapon || rock) {
 		describe_damage(tb, obj, true);
