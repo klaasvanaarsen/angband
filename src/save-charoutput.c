@@ -1970,34 +1970,34 @@ bool save_charoutput(void) {
   // file_putf(fo, "    isDead: %s\n", player->is_dead ? "true" : "false");
   // file_put(fo, "  },\n");
 
-  file_put(fo, "  player: {\n");
-  file_put(fo, "    race: ");
-  (void)put_json_string(fo, player->race->name);
-  file_put(fo, ",\n");
-  file_put(fo, "    class: ");
-  (void)put_json_string(fo, player->class->name);
-  file_put(fo, ",\n");
-  file_putf(fo, "    depth: %d,\n", player->depth);
-  file_putf(fo, "    level: %d,\n", player->lev);
-  file_putf(fo, "    hp: { current: %d, max: %d },\n", player->chp,
-            player->mhp);
-  file_putf(fo, "    sp: { current: %d, max: %d },\n", player->csp,
-            player->msp);
-  file_putf(fo, "    speed: %d,\n", player->state.speed);
-  file_putf(fo, "    ac: %d,\n", player->state.ac + player->state.to_a);
-  file_putf(fo, "    gold: %d,\n", player->au);
-  file_putf(fo, "    position: { y: %d, x: %d },\n", player->grid.y,
-            player->grid.x);
-  file_putf(fo, "    onUpstairs: %s,\n",
-            square_isupstairs(cave, player->grid) ? "true" : "false");
-  file_putf(fo, "    onDownstairs: %s\n",
-            square_isdownstairs(cave, player->grid) ? "true" : "false");
-  file_put(fo, "  },\n");
+  // file_put(fo, "  player: {\n");
+  // file_put(fo, "    race: ");
+  // (void)put_json_string(fo, player->race->name);
+  // file_put(fo, ",\n");
+  // file_put(fo, "    class: ");
+  // (void)put_json_string(fo, player->class->name);
+  // file_put(fo, ",\n");
+  // file_putf(fo, "    depth: %d,\n", player->depth);
+  // file_putf(fo, "    level: %d,\n", player->lev);
+  // file_putf(fo, "    hp: { current: %d, max: %d },\n", player->chp,
+  //           player->mhp);
+  // file_putf(fo, "    sp: { current: %d, max: %d },\n", player->csp,
+  //           player->msp);
+  // file_putf(fo, "    speed: %d,\n", player->state.speed);
+  // file_putf(fo, "    ac: %d,\n", player->state.ac + player->state.to_a);
+  // file_putf(fo, "    gold: %d,\n", player->au);
+  // file_putf(fo, "    position: { y: %d, x: %d },\n", player->grid.y,
+  //           player->grid.x);
+  // file_putf(fo, "    onUpstairs: %s,\n",
+  //           square_isupstairs(cave, player->grid) ? "true" : "false");
+  // file_putf(fo, "    onDownstairs: %s\n",
+  //           square_isdownstairs(cave, player->grid) ? "true" : "false");
+  // file_put(fo, "  },\n");
 
-  file_put(fo, "  navigation: {\n");
-  file_putf(fo, "    nearestUpstairs: %d,\n", nearest_upstairs);
-  file_putf(fo, "    nearestDownstairs: %d\n", nearest_downstairs);
-  file_put(fo, "  },\n");
+  // file_put(fo, "  navigation: {\n");
+  // file_putf(fo, "    nearestUpstairs: %d,\n", nearest_upstairs);
+  // file_putf(fo, "    nearestDownstairs: %d\n", nearest_downstairs);
+  // file_put(fo, "  },\n");
 
   file_put(fo, "  status: {\n");
   file_put(fo, "    activeTimed: [");
@@ -2022,15 +2022,15 @@ bool save_charoutput(void) {
   file_put(fo, "]\n");
   file_put(fo, "  },\n");
 
-  file_put(fo, "  visibility: {\n");
-  file_putf(fo, "    visibleMonsters: %d,\n", visible_count);
-  file_putf(fo, "    adjacentMonsters: %d,\n", adjacent_count);
-  file_putf(fo, "    fasterThanPlayer: %d,\n", faster_count);
-  file_putf(fo, "    uniqueVisible: %d,\n", unique_visible_count);
-  file_putf(fo, "    invisibleVisible: %d,\n", invisible_visible_count);
-  file_putf(fo, "    spellcastersVisible: %d,\n", spellcaster_visible_count);
-  file_putf(fo, "    stealersVisible: %d\n", steal_visible_count);
-  file_put(fo, "  },\n");
+  // file_put(fo, "  visibility: {\n");
+  // file_putf(fo, "    visibleMonsters: %d,\n", visible_count);
+  // file_putf(fo, "    adjacentMonsters: %d,\n", adjacent_count);
+  // file_putf(fo, "    fasterThanPlayer: %d,\n", faster_count);
+  // file_putf(fo, "    uniqueVisible: %d,\n", unique_visible_count);
+  // file_putf(fo, "    invisibleVisible: %d,\n", invisible_visible_count);
+  // file_putf(fo, "    spellcastersVisible: %d,\n", spellcaster_visible_count);
+  // file_putf(fo, "    stealersVisible: %d\n", steal_visible_count);
+  // file_put(fo, "  },\n");
 
   write_monster_list(fo);
 
@@ -2204,7 +2204,7 @@ bool save_charoutput(void) {
   file_put(fo, "\n  ],\n");
 
   write_available_spells(fo);
-  write_tactical_grid(fo, 8);
+  // write_tactical_grid(fo, 8);
 
   // file_put(fo, "  actionHint: ");
   // (void)put_json_string(fo,
