@@ -5363,9 +5363,9 @@ int FAR PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
 
 #ifdef USE_SAVER
 	if (lpCmdLine && ((*lpCmdLine == '-') || (*lpCmdLine == '/'))) {
-		lpCmdLine++;
+		const char *saver_switch = lpCmdLine + 1;
 
-		switch (*lpCmdLine)
+		switch (*saver_switch)
 		{
 			case 's':
 			case 'S':
@@ -5450,6 +5450,39 @@ int FAR PASCAL WinMain(HINSTANCE hInst, HINSTANCE hPrevInst,
 
 	/* Prepare the filepaths */
 	init_stuff();
+
+	/* "-l": show savefiles with their descriptions in a message box, then quit */
+	bool list_requested = false;
+	if (lpCmdLine) {
+		const char *cl = lpCmdLine;
+
+		while (*cl == ' ') cl++;
+		list_requested = (cl[0] == '-' || cl[0] == '/') && cl[1] == 'l';
+	}
+	if (list_requested) {
+		savefile_getter g = NULL;
+		char out[8192];
+		size_t len;
+
+		if (!got_savefile(&g)) {
+			my_strcpy(out, "There are no savefiles you can use.", sizeof(out));
+		} else {
+			my_strcpy(out, "Savefiles you can use are:\n", sizeof(out));
+			do {
+				const struct savefile_details *details =
+					get_savefile_details(g);
+
+				len = strlen(out);
+				strnfmt(out + len, sizeof(out) - len, "\n%s: %s",
+					details->fnam + details->foff,
+					details->desc ? details->desc : "(no description)");
+			} while (got_savefile(&g));
+		}
+		cleanup_savefile_getter(g);
+
+		MessageBoxA(NULL, out, "Angband savefiles", MB_OK);
+		exit(0);
+	}
 
 	/* Determine if display is 16/256/true color */
 	hdc = GetDC(NULL);
