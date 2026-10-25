@@ -969,9 +969,12 @@ bool earlier_object(struct object *orig, struct object *new, bool store)
 		if (!object_flavor_is_aware(orig)) return true;
 	}
 
-	/* Objects sort by increasing sval */
-	if (orig->sval < new->sval) return false;
-	if (orig->sval > new->sval) return true;
+	/* Sling shots sort by value alone (best first), whatever their kind */
+	if (!(!store && orig->tval == TV_SHOT)) {
+		/* Objects sort by increasing sval */
+		if (orig->sval < new->sval) return false;
+		if (orig->sval > new->sval) return true;
+	}
 
 	if (!store) {
 		/* Unaware objects always come last (default to orig) */
@@ -985,8 +988,8 @@ bool earlier_object(struct object *orig, struct object *new, bool store)
 		}
 	}
 
-	/* Objects sort by decreasing value, except ammo */
-	if (tval_is_ammo(orig)) {
+	/* Objects sort by decreasing value, except ammo (shots: best first) */
+	if (tval_is_ammo(orig) && !(!store && orig->tval == TV_SHOT)) {
 		if (object_value(orig, 1) < object_value(new, 1))
 			return false;
 		if (object_value(orig, 1) >	object_value(new, 1))
