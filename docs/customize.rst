@@ -86,6 +86,9 @@ Ignoring items
 
 Angband allows you to ignore specific items that you don't want to see anymore. These items are marked 'ignored' and any similar items are hidden from view. The easiest way to ignore an item is with the ``k`` (or ``^d``) command; the object is dropped and then hidden from view.  When ignoring an object, you will be given a choice of ignoring just that object, or all objects like it in some way. If you accidentally ignore an item or find yourself in a situation where you want to see if a previously ignored item is available nearby, one way to handle that is to turn off ignoring for all items with the ``K`` (or ``O``) command, go to the item you want, unignore it with the ``k`` (or ``^d``) command, and then turn on ignoring again with the ``K`` (or ``O``) command. When ignoring has been turned off for all items, you will see ``Unignoring`` in the status line at the bottom of the screen.
 
+Items with an active curse that prevents teleportation are never ignored, even
+when the curse is not yet known or the item matches an ignore setting.
+
 The entire ignoring system can also be accessed from the options menu (``=``) by choosing ``i`` for ``Item ignoring setup``.  This allows ignore settings for non-wearable items, and quality and ego ignore settings (described below) for wearable items, to be viewed or changed.
 
 There is a quality setting for each wearable item type. Ignoring a wearable item will prompt you with a question about whether you wish to ignore all of that type of item with a certain quality setting, or of an ego type, or both.

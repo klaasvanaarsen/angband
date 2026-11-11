@@ -19,6 +19,7 @@
 #include "angband.h"
 #include "cmds.h"
 #include "init.h"
+#include "obj-curse.h"
 #include "obj-desc.h"
 #include "obj-gear.h"
 #include "obj-ignore.h"
@@ -571,6 +572,25 @@ void kind_ignore_when_unaware(struct object_kind *kind)
 
 
 /**
+ * Prevent ignoring an item with an active curse that blocks teleportation,
+ * even if the curse has not yet been identified.
+ */
+bool object_has_no_teleport_curse(const struct object *obj)
+{
+	int i;
+
+	if (!obj->curses)
+		return false;
+
+	for (i = 1; i < z_info->curse_max; i++) {
+		if (obj->curses[i].power &&
+			of_has(curses[i].obj->flags, OF_NO_TELEPORT))
+			return true;
+	}
+	return false;
+}
+
+/**
  * Determines if an object is already ignored.
  */
 bool object_is_ignored(const struct object *obj)
@@ -579,6 +599,9 @@ bool object_is_ignored(const struct object *obj)
 
 	/* Objects that aren't yet known can't be ignored */
 	if (!obj->known)
+		return false;
+
+	if (object_has_no_teleport_curse(obj))
 		return false;
 
 	/* Do ignore individual objects that marked ignore */

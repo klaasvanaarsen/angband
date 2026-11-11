@@ -1794,7 +1794,10 @@ void textui_cmd_ignore_menu(struct object *obj)
 	screen_load();
 
 	if (selected == IGNORE_THIS_ITEM) {
-		obj->known->notice |= OBJ_NOTICE_IGNORE;
+		if (object_has_no_teleport_curse(obj))
+			msg("This item cannot be ignored.");
+		else
+			obj->known->notice |= OBJ_NOTICE_IGNORE;
 	} else if (selected == UNIGNORE_THIS_ITEM) {
 		obj->known->notice &= ~(OBJ_NOTICE_IGNORE);
 	} else if (selected == IGNORE_THIS_FLAVOR) {
@@ -1837,4 +1840,3 @@ void textui_cmd_toggle_ignore(void)
 	player->upkeep->notice |= PN_IGNORE;
 	do_cmd_redraw();
 }
-

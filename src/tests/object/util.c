@@ -3,8 +3,10 @@
 #include "unit-test.h"
 #include "unit-test-data.h"
 
+#include "cave.h"
 #include "object.h"
 #include "obj-curse.h"
+#include "obj-ignore.h"
 #include "obj-make.h"
 #include "obj-pile.h"
 #include "obj-util.h"
@@ -56,6 +58,86 @@ int teardown_tests(void *state) {
 }
 
 /* Regression test for #1661 */
+static int test_ignore_no_teleport_curse(void *state) {
+	struct object_kind kind = { 0 };
+	struct object obj = { 0 }, known = { 0 };
+	struct ego_item ego = { 0 };
+	struct curse_data applied[5] = { { 0 } };
+	struct player p = { 0 };
+	struct object *objects[2] = { NULL, &obj };
+	struct chunk level = { 0 };
+	struct chunk *old_cave = cave;
+	uint8_t old_level = ignore_level[ITYPE_SHARP];
+	bool ego_types[ITYPE_MAX] = { false };
+	bool *ego_rows[] = { ego_types };
+	bool **old_ego_types = ego_ignore_types;
+	bool known_ignored, known_protected;
+	bool ego_ignored, ego_protected;
+
+	kind.name = "Sword";
+	kind.tval = TV_SWORD;
+	obj.kind = &kind;
+	obj.tval = TV_SWORD;
+	obj.known = &known;
+	obj.curses = applied;
+	known.oidx = 1;
+	level.objects = objects;
+	cave = &level;
+	of_on(curses[1].obj->flags, OF_NO_TELEPORT);
+
+	kind.ignore = IGNORE_IF_UNAWARE;
+	known_ignored = ignore_known_item_ok(&p, &known);
+	applied[1].power = 10;
+	known_protected = !ignore_known_item_ok(&p, &known);
+	cave = old_cave;
+	require(known_ignored);
+	require(known_protected);
+	require(!object_is_ignored(&obj));
+	require(!ignore_item_ok(&p, &obj));
+
+	kind.aware = true;
+	kind.ignore = IGNORE_IF_AWARE;
+	require(!object_is_ignored(&obj));
+	applied[1].power = 0;
+	require(object_is_ignored(&obj));
+	applied[1].power = 10;
+	kind.aware = false;
+	kind.ignore = 0;
+	known.notice = OBJ_NOTICE_IGNORE;
+	require(!object_is_ignored(&obj));
+	applied[1].power = 0;
+	require(object_is_ignored(&obj));
+
+	known.notice = OBJ_NOTICE_ASSESSED;
+	ignore_level[ITYPE_SHARP] = IGNORE_ALL;
+	require(object_is_ignored(&obj));
+	applied[1].power = 10;
+	require(!object_is_ignored(&obj));
+	ignore_level[ITYPE_SHARP] = old_level;
+
+	known.notice = 0;
+	known.ego = &ego;
+	obj.ego = &ego;
+	ego_types[ITYPE_SHARP] = true;
+	ego_ignore_types = ego_rows;
+	applied[1].power = 0;
+	ego_ignored = object_is_ignored(&obj);
+	applied[1].power = 10;
+	ego_protected = !object_is_ignored(&obj);
+	ego_ignore_types = old_ego_types;
+	require(ego_ignored);
+	require(ego_protected);
+
+	/* An unrelated curse or an innate flag is not an exception. */
+	known.notice = OBJ_NOTICE_IGNORE;
+	applied[1].power = 0;
+	applied[2].power = 10;
+	of_on(obj.flags, OF_NO_TELEPORT);
+	require(object_is_ignored(&obj));
+	of_off(curses[1].obj->flags, OF_NO_TELEPORT);
+	ok;
+}
+
 static int test_obj_can_refill(void *state) {
     struct object obj_torch, obj_lantern, obj_candidate;
 
@@ -326,6 +408,7 @@ static int test_object_weight_one(void *state) {
 
 const char *suite_name = "object/util";
 struct test tests[] = {
+	{ "ignore_no_teleport_curse", test_ignore_no_teleport_curse },
 	{ "obj_can_refill", test_obj_can_refill },
 	{ "basic_check_for_inscrip_with_uint", test_basic_check_for_inscrip_with_int },
 	{ "object_weight_one", test_object_weight_one },
