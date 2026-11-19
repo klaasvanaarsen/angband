@@ -13,9 +13,13 @@
 #include "init.h"
 #include "mon-make.h"
 #include "savefile.h"
+#include "score.h"
 #include "player.h"
 #include "player-birth.h"
 #include "player-timed.h"
+#include "ui-game.h"
+#include "ui-score.h"
+#include "ui-term.h"
 #include "z-util.h"
 
 static void event_message(game_event_type type, game_event_data *data, void *user) {
@@ -80,6 +84,9 @@ int setup_tests(void **state) {
 
 int teardown_tests(void *state) {
 	file_delete("Test1");
+	file_delete("TestScore");
+	file_delete("TestScoreDead");
+	file_delete("TestScoreBroken");
 	wipe_mon_list(cave, player);
 	cleanup_angband();
 	return 0;
@@ -119,6 +126,113 @@ static int test_loadgame(void *state) {
 
 	ok;
 }
+
+static int test_living_save_score(void *state) {
+	struct high_score expected, actual;
+	ang_file *broken;
+	int32_t saved_max_exp = player->max_exp;
+	int16_t saved_max_depth = player->max_depth;
+	int16_t saved_depth = player->depth;
+
+	player->max_exp = 12345;
+	player->max_depth = 20;
+	player->depth = 12;
+	build_score(&expected, player, ALIVE_HOW, NULL);
+	require(savefile_save("TestScore"));
+	player->max_exp = saved_max_exp;
+	player->max_depth = saved_max_depth;
+	player->depth = saved_depth;
+
+	require(savefile_get_living_score("TestScore", &actual));
+	require(streq(expected.who, actual.who));
+	require(streq(expected.pts, actual.pts));
+	require(streq(expected.gold, actual.gold));
+	require(streq(expected.turns, actual.turns));
+	require(streq(expected.p_r, actual.p_r));
+	require(streq(expected.p_c, actual.p_c));
+	require(streq(expected.cur_lev, actual.cur_lev));
+	require(streq(expected.cur_dun, actual.cur_dun));
+	require(streq(expected.max_lev, actual.max_lev));
+	require(streq(expected.max_dun, actual.max_dun));
+	require(streq(actual.how, ALIVE_HOW));
+	require(streq(actual.day, "SAVED"));
+	eq(player->max_exp, saved_max_exp);
+	eq(player->depth, saved_depth);
+
+	player->is_dead = true;
+	require(savefile_save("TestScoreDead"));
+	player->is_dead = false;
+	require(!savefile_get_living_score("TestScoreDead", &actual));
+	require(!savefile_get_living_score("TestScoreMissing", &actual));
+	broken = file_open("TestScoreBroken", MODE_WRITE, FTYPE_RAW);
+	notnull(broken);
+	require(file_write(broken, "SaveVNLA", 8));
+	require(file_close(broken));
+	require(!savefile_get_living_score("TestScoreBroken", &actual));
+	ok;
+}
+
+#ifndef SETGID
+static int test_hall_of_fame_living(void *state) {
+	term test_term;
+	char *old_save_dir = ANGBAND_DIR_SAVE;
+	char *old_score_dir = ANGBAND_DIR_SCORES;
+	char old_savefile[sizeof(savefile)];
+	char old_name[sizeof(player->full_name)];
+	char first[81], second[81], third[81], status[81];
+	bool old_generated = character_generated;
+	wchar_t ch;
+	int attr, x, living_attrs[3], current_attrs[3];
+
+	my_strcpy(old_savefile, savefile, sizeof(old_savefile));
+	my_strcpy(old_name, player->full_name, sizeof(old_name));
+	ANGBAND_DIR_SAVE = ".";
+	ANGBAND_DIR_SCORES = "TestScoreMissing";
+	path_build(savefile, sizeof(savefile), ".", "Test1");
+	my_strcpy(player->full_name, "CurrentTester", sizeof(player->full_name));
+	character_generated = true;
+	term_init(&test_term, 80, 24, 16);
+	Term_activate(&test_term);
+	angband_term[0] = &test_term;
+	Term_keypress(ESCAPE, 0);
+	predict_score(true);
+
+	for (x = 0; x < 3; ++x) {
+		Term_what(15, 2 + x, &living_attrs[x], &ch);
+		Term_what(15, 6 + x, &current_attrs[x], &ch);
+	}
+
+	for (x = 0; x < 80; ++x) {
+		Term_what(x, 2, &attr, &ch);
+		first[x] = ch ? (char)ch : ' ';
+		Term_what(x, 6, &attr, &ch);
+		second[x] = ch ? (char)ch : ' ';
+		Term_what(x, 10, &attr, &ch);
+		third[x] = ch ? (char)ch : ' ';
+		Term_what(x, 3, &attr, &ch);
+		status[x] = ch ? (char)ch : ' ';
+	}
+	first[80] = second[80] = third[80] = status[80] = '\0';
+
+	term_nuke(&test_term);
+	angband_term[0] = NULL;
+	ANGBAND_DIR_SAVE = old_save_dir;
+	ANGBAND_DIR_SCORES = old_score_dir;
+	my_strcpy(savefile, old_savefile, sizeof(savefile));
+	my_strcpy(player->full_name, old_name, sizeof(player->full_name));
+	character_generated = old_generated;
+
+	require(strstr(first, "Tester the") != NULL);
+	require(strstr(second, "CurrentTester the") != NULL);
+	require(strstr(third, "Tester") == NULL);
+	require(strstr(status, "Alive on dungeon level 12") != NULL);
+	for (x = 0; x < 3; ++x) {
+		eq(living_attrs[x], COLOUR_YELLOW);
+		eq(current_attrs[x], COLOUR_L_GREEN);
+	}
+	ok;
+}
+#endif
 
 static int test_stairs1(void *state) {
 	reset_before_load();
@@ -253,6 +367,10 @@ static int test_drop_eat(void *state) {
 const char *suite_name = "game/basic";
 struct test tests[] = {
 	{ "newgame", test_newgame },
+	{ "living_save_score", test_living_save_score },
+#ifndef SETGID
+	{ "hall_of_fame_living", test_hall_of_fame_living },
+#endif
 	{ "loadgame", test_loadgame },
 	{ "stairs1", test_stairs1 },
 	{ "stairs2", test_stairs2 },

@@ -47,6 +47,9 @@ bool savefile_load(const char *path, bool cheat_death);
  */
 const char *savefile_get_description(const char *path);
 
+struct high_score;
+bool savefile_get_living_score(const char *path, struct high_score *score);
+
 /**
  * Fill the given buffer with the panic save equivalent for a savefile.
  */

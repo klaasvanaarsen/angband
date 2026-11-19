@@ -36,6 +36,9 @@ struct player;
  */
 #define WINNING_HOW "Ripe Old Age"
 
+/* Marker for a living character displayed from a savefile. */
+#define ALIVE_HOW "nobody (yet!)"
+
 /**
  * Semi-Portable High Score List Entry (128 bytes)
  *

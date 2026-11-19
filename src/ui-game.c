@@ -1196,7 +1196,7 @@ void close_game(bool prompt_failed_save)
  * that case calling get_savefile_details() on *pg will return a non-NULL
  * result.  Otherwise, return false.
  */
-bool got_savefile(savefile_getter *pg)
+static bool got_savefile_aux(savefile_getter *pg, bool read_description)
 {
 	char fname[256];
 
@@ -1251,7 +1251,7 @@ bool got_savefile(savefile_getter *pg)
 #endif
 
 		path_build(path, sizeof(path), ANGBAND_DIR_SAVE, fname);
-		desc = savefile_get_description(path);
+		desc = read_description ? savefile_get_description(path) : NULL;
 		string_free((*pg)->details.fnam);
 		(*pg)->details.fnam = string_make(fname);
 		string_free((*pg)->details.desc);
@@ -1265,6 +1265,16 @@ bool got_savefile(savefile_getter *pg)
 	(*pg)->have_details = false;
 
 	return false;
+}
+
+bool got_savefile(savefile_getter *pg)
+{
+	return got_savefile_aux(pg, true);
+}
+
+bool got_savefile_name(savefile_getter *pg)
+{
+	return got_savefile_aux(pg, false);
 }
 
 

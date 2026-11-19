@@ -22,6 +22,7 @@
 #include "obj-knowledge.h"
 #include "savefile.h"
 #include "save-charoutput.h"
+#include "score.h"
 #include "z-file.h"
 
 /**
@@ -495,8 +496,10 @@ static errr next_blockheader(ang_file *f, struct blockheader *b) {
 	b->size = RECONSTRUCT_U32B(20);
 
 	/* Pad to 4 bytes */
-	if (b->size % 4)
+	if (b->size % 4) {
+		if (b->size > UINT32_MAX - 3) return -1;
 		b->size += 4 - (b->size % 4);
+	}
 
 	return 0;
 }
@@ -623,6 +626,185 @@ const char *savefile_get_description(const char *path) {
 
 	file_close(f);
 	return savefile_desc;
+}
+
+struct score_reader {
+	const uint8_t *data;
+	size_t size;
+	size_t pos;
+};
+
+static bool score_read_bytes(struct score_reader *r, size_t count)
+{
+	if (count > r->size - r->pos) return false;
+	r->pos += count;
+	return true;
+}
+
+static bool score_read_string(struct score_reader *r, char *out, size_t size)
+{
+	const uint8_t *end = memchr(r->data + r->pos, 0, r->size - r->pos);
+	size_t len;
+
+	if (!end) return false;
+	len = (size_t)(end - (r->data + r->pos));
+	if (out) {
+		if (len >= size) return false;
+		memcpy(out, r->data + r->pos, len);
+		out[len] = '\0';
+	}
+	r->pos += len + 1;
+	return true;
+}
+
+static bool score_read_u16(struct score_reader *r, uint16_t *value)
+{
+	size_t pos = r->pos;
+	if (!score_read_bytes(r, 2)) return false;
+	*value = r->data[pos] | ((uint16_t)r->data[pos + 1] << 8);
+	return true;
+}
+
+static bool score_read_u32(struct score_reader *r, uint32_t *value)
+{
+	size_t pos = r->pos;
+	if (!score_read_bytes(r, 4)) return false;
+	*value = (uint32_t)r->data[pos] | ((uint32_t)r->data[pos + 1] << 8) |
+		((uint32_t)r->data[pos + 2] << 16) |
+		((uint32_t)r->data[pos + 3] << 24);
+	return true;
+}
+
+static bool read_score_player(struct score_reader *r, struct player *p)
+{
+	char race_name[80], class_name[80];
+	struct player_race *race;
+	struct player_class *class;
+	uint16_t value, slots;
+	uint32_t n;
+	uint8_t stats;
+	size_t i;
+
+	if (!score_read_string(r, p->full_name, sizeof(p->full_name)) ||
+		!score_read_string(r, NULL, 0) || !score_read_string(r, NULL, 0) ||
+		!score_read_string(r, race_name, sizeof(race_name)) ||
+		!score_read_string(r, NULL, 0) ||
+		!score_read_string(r, class_name, sizeof(class_name))) return false;
+	for (race = races; race && !streq(race->name, race_name);
+			race = race->next) {}
+	for (class = classes; class && !streq(class->name, class_name);
+			class = class->next) {}
+	if (!race || !class) return false;
+	p->race = race;
+	p->class = class;
+	if (!score_read_bytes(r, 9) || !score_read_bytes(r, 1)) return false;
+	stats = r->data[r->pos - 1];
+	if (stats > STAT_MAX || !score_read_bytes(r, (size_t)stats * 8 + 10) ||
+		!score_read_string(r, NULL, 0) || !score_read_u16(r, &slots) ||
+		slots > z_info->equip_slots_max) return false;
+	for (i = 0; i < slots; ++i) {
+		if (!score_read_bytes(r, 2) || !score_read_string(r, NULL, 0))
+			return false;
+	}
+	if (!score_read_bytes(r, 4) || !score_read_u32(r, &n) ||
+		n > INT32_MAX) return false;
+	p->au = n;
+	if (!score_read_u32(r, &n) || n > PY_MAX_EXP) return false;
+	p->max_exp = n;
+	if (!score_read_bytes(r, 6) || !score_read_u16(r, &value)) return false;
+	p->lev = (int16_t)value;
+	if (!score_read_bytes(r, 12) || !score_read_u16(r, &value)) return false;
+	p->max_lev = (int16_t)value;
+	if (!score_read_u16(r, &value)) return false;
+	p->max_depth = (int16_t)value;
+	if (p->lev < 1 || p->lev > PY_MAX_LEVEL) return false;
+	if (p->max_lev < p->lev) p->max_lev = p->lev;
+	if (p->max_depth < 0) p->max_depth = 1;
+	return true;
+}
+
+/*
+ * Read just the score fields from a savefile, without changing the current
+ * game.  Only the existing version 1 blocks are supported.
+ */
+bool savefile_get_living_score(const char *path, struct high_score *score)
+{
+	struct blockheader b;
+	struct player saved_player;
+	ang_file *f;
+	bool have_player = false, have_misc = false, have_dungeon = false;
+	bool dead = false, valid = true;
+	uint32_t saved_turn = 0;
+	errr err = 0;
+
+	memset(&saved_player, 0, sizeof(saved_player));
+	safe_setuid_grab();
+	f = file_open(path, MODE_READ, FTYPE_RAW);
+	safe_setuid_drop();
+	if (!f) return false;
+	if (!check_header(f)) {
+		file_close(f);
+		return false;
+	}
+
+	while ((err = next_blockheader(f, &b)) == 0) {
+		bool is_player = streq(b.name, "player");
+		bool is_misc = streq(b.name, "misc");
+		bool is_dungeon = streq(b.name, "dungeon");
+		if (is_player || is_misc || is_dungeon) {
+			uint8_t *data;
+			struct score_reader r;
+			uint16_t value;
+			size_t read_size = is_dungeon ? MIN(b.size, 4) : b.size;
+			if (b.version != 1 || read_size == 0 || read_size > 65536 ||
+				b.size > INT_MAX) {
+				valid = false;
+				break;
+			}
+			data = mem_alloc(read_size);
+			r.data = data;
+			r.size = read_size;
+			r.pos = 0;
+			if (file_read(f, (char *)data, read_size) != (int)read_size ||
+				!file_skip(f, b.size - read_size)) {
+				mem_free(data);
+				valid = false;
+				break;
+			}
+			if (is_player) {
+				valid = !have_player && read_score_player(&r, &saved_player);
+				have_player = true;
+			} else if (is_misc) {
+				valid = !have_misc && score_read_bytes(&r, 12) &&
+					score_read_bytes(&r, 1) &&
+					score_read_u32(&r, &saved_turn);
+				if (valid) dead = r.data[12] != 0;
+				have_misc = true;
+			} else {
+				valid = !have_dungeon && score_read_u16(&r, &value) &&
+					value < z_info->max_depth;
+				if (valid) saved_player.depth = value;
+				have_dungeon = true;
+			}
+			mem_free(data);
+			if (!valid || (have_player && have_misc && have_dungeon))
+				break;
+		} else if (b.size > INT_MAX || !file_skip(f, b.size)) {
+			valid = false;
+			break;
+		}
+	}
+	file_close(f);
+	if (!valid || err < 0 || !have_player || !have_misc || !have_dungeon) {
+		plog_fmt("Could not read score from savefile %s.", path);
+		return false;
+	}
+	if (dead) return false;
+
+	build_score(score, &saved_player, ALIVE_HOW, NULL);
+	my_strcpy(score->day, "SAVED", sizeof(score->day));
+	strnfmt(score->turns, sizeof(score->turns), "%9ld", (long)saved_turn);
+	return true;
 }
 
 
