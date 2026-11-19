@@ -18,7 +18,10 @@
 #include "angband.h"
 #include "buildid.h"
 #include "game-world.h"
+#include "init.h"
+#include "savefile.h"
 #include "score.h"
+#include "ui-game.h"
 #include "ui-input.h"
 #include "ui-output.h"
 #include "ui-score.h"
@@ -35,6 +38,7 @@ static void display_score_page(const struct high_score scores[], int start,
 	/* Dump 5 entries */
 	for (n = 0; start < count && n < 5; start++, n++) {
 		const struct high_score *score = &scores[start];
+		bool alive = streq(score->how, ALIVE_HOW);
 		uint8_t attr;
 		int clev, mlev, cdun, mdun;
 		const char *user, *gold, *when, *aged;
@@ -43,8 +47,8 @@ static void display_score_page(const struct high_score scores[], int start,
 		char out_val[160];
 		char tmp_val[160];
 
-		/* Indicate death in yellow */
-		attr = (start == highlight) ? COLOUR_L_GREEN : COLOUR_WHITE;
+		attr = (start == highlight) ? COLOUR_L_GREEN :
+			(alive ? COLOUR_YELLOW : COLOUR_WHITE);
 
 		c = player_id2class(atoi(score->p_c));
 		r = player_id2race(atoi(score->p_r));
@@ -80,8 +84,13 @@ static void display_score_page(const struct high_score scores[], int start,
 		c_put_str(attr, out_val, n * 4 + 2, 0);
 
 
-		/* Died where? */
-		if (!cdun)
+		/* Show living characters without describing them as dead. */
+		if (alive && !cdun)
+			strnfmt(out_val, sizeof(out_val), "Alive in the town");
+		else if (alive)
+			strnfmt(out_val, sizeof(out_val),
+					"Alive on dungeon level %d", cdun);
+		else if (!cdun)
 			strnfmt(out_val, sizeof(out_val), "Killed by %s in the town",
 					score->how);
 		else
@@ -115,7 +124,8 @@ static void display_score_page(const struct high_score scores[], int start,
  * Display the scores in a given range.
  */
 static void display_scores_aux(const struct high_score scores[], int from,
-							   int to, int highlight, bool allow_scrolling)
+							   int to, int highlight, bool allow_scrolling,
+							   int capacity)
 {
 	struct keypress ch;
 	int k, count;
@@ -123,10 +133,10 @@ static void display_scores_aux(const struct high_score scores[], int from,
 	/* Assume we will show the first 10 */
 	if (from < 0) from = 0;
 	if (to < 0) to = allow_scrolling ? 5 : 10;
-	if (to > MAX_HISCORES) to = MAX_HISCORES;
+	if (to > capacity) to = capacity;
 
 	/* Count the high scores */
-	for (count = 0; count < MAX_HISCORES; count++)
+	for (count = 0; count < capacity; count++)
 		if (!scores[count].what[0])
 			break;
 
@@ -165,7 +175,7 @@ static void display_scores_aux(const struct high_score scores[], int from,
 			break;
 		} else if (ch.code == ARROW_UP && allow_scrolling) {
 			if (k == 0) {
-				k = count - 5;
+				k = MAX(0, count - 5);
 				while (k % 5) k++;
 			} else if (k < 5) {
 				k = 0;
@@ -187,31 +197,70 @@ static void display_scores_aux(const struct high_score scores[], int from,
 	return;
 }
 
+static struct high_score *read_scores_with_living(int *capacity)
+{
+	savefile_getter getter = NULL;
+	struct high_score *scores = mem_zalloc(MAX_HISCORES * sizeof(*scores));
+	int used = 0;
+
+	highscore_read(scores, MAX_HISCORES);
+	while (used < MAX_HISCORES && scores[used].what[0]) ++used;
+	while (got_savefile_name(&getter)) {
+		const struct savefile_details *details = get_savefile_details(getter);
+		struct high_score entry;
+		char path[1024];
+
+		path_build(path, sizeof(path), ANGBAND_DIR_SAVE, details->fnam);
+		if (character_generated &&
+#ifdef WINDOWS
+			my_stricmp(path, savefile) == 0
+#else
+			streq(path, savefile)
+#endif
+			) continue;
+		if (!savefile_get_living_score(path, &entry)) continue;
+		scores = mem_realloc(scores, (used + 1) * sizeof(*scores));
+		memset(&scores[used], 0, sizeof(*scores));
+		highscore_add(&entry, scores, used + 1);
+		++used;
+	}
+	if (!got_savefile_dir(getter))
+		plog("Could not read the savefile directory for the hall of fame.");
+	cleanup_savefile_getter(getter);
+	*capacity = used;
+	return scores;
+}
+
 /**
  * Predict the players location, and display it.
  */
 void predict_score(bool allow_scrolling)
 {
 	int j;
+	int count;
 	struct high_score the_score;
-	struct high_score scores[MAX_HISCORES];
+	struct high_score *scores = read_scores_with_living(&count);
 
 
 	/* Read scores, place current score */
-	highscore_read(scores, N_ELEMENTS(scores));
-	build_score(&the_score, player, "nobody (yet!)", NULL);
+	build_score(&the_score, player, ALIVE_HOW, NULL);
 
-	if (player->is_dead)
-		j = highscore_where(&the_score, scores, N_ELEMENTS(scores));
-	else
-		j = highscore_add(&the_score, scores, N_ELEMENTS(scores));
+	scores = mem_realloc(scores, (count + 1) * sizeof(*scores));
+	memset(&scores[count], 0, sizeof(*scores));
+	if (player->is_dead) {
+		j = highscore_where(&the_score, scores, count + 1);
+	} else {
+		j = highscore_add(&the_score, scores, count + 1);
+		++count;
+	}
 
 	/* Top fifteen scores if on the top ten, otherwise ten surrounding */
 	if (j < 10) {
-		display_scores_aux(scores, 0, 15, j, allow_scrolling);
+		display_scores_aux(scores, 0, 15, j, allow_scrolling, count);
 	} else {
-		display_scores_aux(scores, j - 2, j + 7, j, allow_scrolling);
+		display_scores_aux(scores, j - 2, j + 7, j, allow_scrolling, count);
 	}
+	mem_free(scores);
 }
 
 
@@ -228,9 +277,10 @@ void show_scores(void)
 	} else {
 		/* Currently unused, but leaving in in case we re-implement looking
 		 * at the scores without loading a character */
-		struct high_score scores[MAX_HISCORES];
-		highscore_read(scores, N_ELEMENTS(scores));
-		display_scores_aux(scores, 0, MAX_HISCORES, -1, true);
+		int count;
+		struct high_score *scores = read_scores_with_living(&count);
+		display_scores_aux(scores, 0, count, -1, true, count);
+		mem_free(scores);
 	}
 
 	screen_load();

@@ -587,7 +587,9 @@ Check knowledge (``~``)
 
   hall of fame
     Displays a list of current and past characters, sorted by how far they
-    progressed.
+    progressed. Living characters in the savefile directory are included from
+    their most recent saves; the current character is shown with its current
+    progress.
 
   character history
     Displays a summary of what your current character has done.

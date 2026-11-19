@@ -77,6 +77,7 @@ bool save_game_checked(void);
 void close_game(bool prompt_failed_save);
 
 bool got_savefile(savefile_getter *pg);
+bool got_savefile_name(savefile_getter *pg);
 bool got_savefile_dir(const savefile_getter g);
 const struct savefile_details *get_savefile_details(const savefile_getter g);
 void cleanup_savefile_getter(savefile_getter g);
